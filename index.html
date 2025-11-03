@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Flappy Bird (Click Fix)</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+
+        /* --- Custom Dropdown Styles --- */
+        #dropdown-menu {
+            position: relative;
+        }
+
+        #dropdown-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            background-color: #4B5563; 
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: bold;
+            transition: background-color 0.15s ease;
+        }
+
+        #dropdown-header:hover {
+            background-color: #6B7280; 
+        }
+        
+        #dropdown-options {
+            position: absolute;
+            top: 100%; 
+            left: 0;
+            right: 0;
+            background-color: #374151; 
+            border-radius: 0 0 0.5rem 0.5rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            z-index: 30; 
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+
+        #dropdown-options.open {
+            max-height: 200px; 
+            padding: 0.75rem;
+        }
+
+        .bird-option-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.25rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        .bird-option-btn:hover {
+            background-color: #4B5563;
+            transform: translateY(-2px);
+        }
+        .bird-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid transparent;
+            margin-bottom: 0.25rem;
+        }
+        .selected .bird-icon {
+            border-color: #F59E0B; 
+            box-shadow: 0 0 5px #F59E0B;
+        }
+
+
+        /* --- Game Styles --- */
+        #game-container {
+            background-image: url('dash group.png'); 
+            background-size: cover;
+            background-repeat: repeat-x;
+            background-position: 0 0;
+            animation: scroll-bg 40s linear infinite;
+
+            width: 100%;
+            max-width: 400px;
+            height: 90vh;
+            max-height: 700px;
+            overflow: hidden; 
+            position: relative;
+            border-radius: 1rem;
+            border: 3px solid #333;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            min-height: 400px; 
+        }
+
+        @keyframes scroll-bg {
+            0% { background-position: 0 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        #bird {
+            background-image: url('mainak.png');
+            background-color: transparent;
+            background-size: cover; 
+            background-repeat: no-repeat;
+            background-position: center;
+            
+            width: 40px;
+            height: 40px;
+            border-radius: 50%; 
+
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            transition: transform 0.1s linear, box-shadow 0.1s linear;
+            z-index: 10;
+        }
+
+        .pipe {
+            position: absolute;
+            width: 65px;
+            border-radius: 0.5rem;
+            z-index: 5;
+        }
+        
+        .pipe-top, .pipe-bottom {
+            background-image: url('sagnik.png'); 
+            background-size: 100% 100%; 
+            background-repeat: no-repeat; 
+            border: none; 
+        }
+
+        .pipe-top {
+            top: 0;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            transform: scaleY(-1); 
+            background-position: bottom; 
+        }
+        
+        .pipe-bottom {
+            bottom: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            background-position: top;
+        }
+
+        .bad-bird {
+            position: absolute;
+            width: 55px; 
+            height: 55px;
+            background-image: url('DC.png');
+            background-color: transparent;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 50%;
+            z-index: 8;
+        }
+
+        .health-bird {
+            position: absolute;
+            width: 40px; 
+            height: 40px;
+            background-image: url('health.png');
+            background-color: transparent;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 50%;
+            z-index: 8;
+            transition: transform 0.1s;
+        }
+
+        /* Generic Popup Styling for Rules, Start, Game Over, Win */
+        .message-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-weight: bold;
+            z-index: 20;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 80%;
+            max-width: 300px;
+        }
+
+        #score {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: white;
+            z-index: 15;
+            -webkit-text-stroke: 0px #222; 
+            text-stroke: 0px #222;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #health-bar-container {
+            position: absolute;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 300px;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 15;
+            box-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        #health-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease-out, background-color 0.3s;
+        }
+
+        .blood-drop {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: red;
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-800 flex flex-col items-center justify-center h-screen w-screen overflow-hidden">
+
+    <!-- Custom Dropdown UI for Bird Selector -->
+    <div id="settings-panel" class="mb-4 w-full max-w-sm sm:max-w-md">
+        <div id="dropdown-menu">
+            <div id="dropdown-header">
+                <span id="dropdown-current-text">Choose Your Flyer (Current: Mainak)</span>
+                <svg id="dropdown-arrow" class="w-5 h-5 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div id="dropdown-options" class="flex justify-around">
+                <div data-bird="Mainak" class="bird-option-btn selected">
+                    <div class="bird-icon" style="background-image: url('mainak.png');"></div>
+                    <span class="text-xs text-white">Mainak</span>
+                </div>
+                <div data-bird="dildo" class="bird-option-btn">
+                    <div class="bird-icon" style="background-image: url('dildo.png');"></div>
+                    <span class="text-xs text-white">dildo</span>
+                </div>
+                <div data-bird="rounak" class="bird-option-btn">
+                    <div class="bird-icon" style="background-image: url('rounak.png');"></div>
+                    <span class="text-xs text-white">rounak</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        
+        <div id="health-bar-container">
+            <div id="health-bar" class="h-full rounded-full transition-all duration-300 ease-out bg-green-500"></div>
+        </div>
+        
+        <div id="bird"></div>
+        <div id="score">0</div>
+        
+        <!-- Game Rules Modal (Updated Text) -->
+        <div id="rules-modal" class="message-popup text-base">
+            <h2 class="font-bold text-xl mb-3 text-gray-700">Game Rules</h2>
+            <ul class="text-left space-y-2 mb-6 list-disc list-inside text-gray-600">
+                <li>**Objective:** Fly through the pipes to score points.</li>
+                <li>**Controls:** Tap or press **Space** to jump.</li>
+                <li>**Health:** You start with 100% health.</li>
+                <li>**DC Lord:** Hitting them drains health. Avoid!</li>
+                <li>**Shourja Lord:** Collect them to restore 5% health.</li>
+                <li>**Goal:** Reach **41** points to win!</li>
+            </ul>
+            <button id="rules-accept-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
+                Got It, Let's Fly!
+            </button>
+        </div>
+
+
+        <div id="start-message" class="message-popup text-xl hidden">
+            Tap to Start
+        </div>
+
+        <div id="game-over" class="message-popup text-2xl hidden">
+            <h2 class="font-bold text-red-600">Game Over</h2>
+            <img src="dead.png" 
+                 onerror="this.style.display='none'" 
+                 alt="Game Over Graphic"
+                 class="my-4 rounded-lg shadow-inner">
+            <p class="text-base mt-2">Tap to restart</p>
+        </div>
+
+        <div id="win-popup" class="message-popup text-2xl hidden">
+            <h2 class="font-bold text-green-600">You Win!</h2>
+            
+            <img src="popup.png" 
+                 onerror="this.style.display='none'" 
+                 alt="Win Popup Graphic"
+                 class="my-4 rounded-lg shadow-inner">
+            <p class="text-base mt-2">Tap to play again</p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const gameContainer = document.getElementById('game-container');
+        const bird = document.getElementById('bird');
+        const scoreDisplay = document.getElementById('score');
+        const startMessage = document.getElementById('start-message');
+        const gameOverMessage = document.getElementById('game-over');
+        const winPopup = document.getElementById('win-popup');
+        const healthBar = document.getElementById('health-bar'); 
+        const rulesModal = document.getElementById('rules-modal'); 
+        const rulesAcceptButton = document.getElementById('rules-accept-btn'); 
+        
+        // Custom Dropdown elements
+        const dropdownHeader = document.getElementById('dropdown-header');
+        const dropdownOptions = document.getElementById('dropdown-options');
+        const dropdownArrow = document.getElementById('dropdown-arrow');
+        const dropdownCurrentText = document.getElementById('dropdown-current-text');
+        const optionButtons = document.querySelectorAll('.bird-option-btn');
+        let currentBirdName = 'Mainak'; 
+
+        // --- Audio Setup ---
+        const flySound = new Audio('while-flying.mp3'); 
+        const hitSound = new Audio('after-hitting-dying.mp3');
+        const winSound = new Audio('after-completing.mp3');
+        const warmupSound = new Audio('warmup.mp3'); 
+        warmupSound.loop = true; 
+        
+        // --- Game Constants ---
+        const birdSize = 40;
+        const birdRadius = birdSize / 2; 
+        const gravity = 0.3;              
+        const jumpForce = -5.0;           
+        const pipeWidth = 65;
+        const pipeGap = 180;             
+        const pipeSpeed = 1.8;           
+        const pipeSpawnInterval = 120;   
+        
+        // DC Bad Bird Constants 
+        const badBirdSize = 55;             
+        const badBirdRadius = badBirdSize / 2;
+        const badBirdSpeed = 2.8;        
+        const badBirdSpawnInterval = 180;  
+        const damageAmount = 20;            
+
+        // Health Bird Constants
+        const healthBirdSize = 40;
+        const healthBirdRadius = healthBirdSize / 2;
+        const healthBirdSpeed = 1.5;
+        const healthBirdSpawnInterval = 300; 
+        const healAmount = 5;
+
+        const winScore = 41;             
+
+        // --- Game State Variables ---
+        let birdY, birdVelocity, pipes, badBirds, healthBirds, score, frameCount, gameStarted, gameOver;
+        let health; 
+        let rulesAccepted = false; 
+        let isBlockingFirstJump = false; // <<< NEW/FIX: Flag to "eat" the first click.
+
+        // --- Bird Selector Logic ---
+
+        function changeBird(birdName) {
+            currentBirdName = birdName;
+            let fileName = '';
+            switch (birdName) {
+                case 'dildo':
+                    fileName = 'dildo.png';
+                    break;
+                case 'Mainak':
+                    fileName = 'mainak.png';
+                    break;
+                case 'rounak':
+                    fileName = 'rounak.png';
+                    break;
+                default:
+                    fileName = 'mainak.png';
+            }
+            bird.style.backgroundImage = `url('${fileName}')`;
+            
+            dropdownCurrentText.textContent = `Choose Your Flyer (Current: ${birdName})`;
+
+            optionButtons.forEach(btn => {
+                if (btn.dataset.bird === birdName) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+            
+            dropdownOptions.classList.remove('open');
+            dropdownArrow.style.transform = 'rotate(0deg)';
+        }
+
+        // --- Health Bar and Blood Functions ---
+
+        function updateHealthBar(currentHealth) {
+            healthBar.style.width = `${Math.max(0, currentHealth)}%`;
+            
+            if (currentHealth > 60) {
+                healthBar.className = 'h-full rounded-full transition-all duration-300 ease-out bg-green-500';
+            } else if (currentHealth > 30) {
+                healthBar.className = 'h-full rounded-full transition-all duration-300 ease-out bg-yellow-500';
+            } else {
+                healthBar.className = 'h-full rounded-full transition-all duration-300 ease-out bg-red-600';
+            }
+        }
+
+        function dropBlood(x, y) {
+            const dropCount = 5;
+            for (let i = 0; i < dropCount; i++) { 
+                const drop = document.createElement('div');
+                drop.className = 'blood-drop';
+                
+                drop.style.left = `${x + birdSize / 2 + (Math.random() * 10 - 5)}px`;
+                drop.style.top = `${y + birdSize / 2 + (Math.random() * 10 - 5)}px`;
+                
+                const initialVelX = Math.random() * 4 - 2;
+                const initialVelY = Math.random() * 3 - 5; 
+                const bloodGravity = 0.2;
+                let dropX = parseFloat(drop.style.left);
+                let dropY = parseFloat(drop.style.top);
+                let velX = initialVelX;
+                let velY = initialVelY;
+                let life = 60; 
+                
+                gameContainer.appendChild(drop);
+                
+                function animateDrop() {
+                    if (life <= 0) {
+                        drop.remove();
+                        return;
+                    }
+                    
+                    velY += bloodGravity;
+                    dropX += velX;
+                    dropY += velY;
+                    
+                    drop.style.left = `${dropX}px`;
+                    drop.style.top = `${dropY}px`;
+                    drop.style.opacity = life / 60; 
+                    
+                    life--;
+                    requestAnimationFrame(animateDrop);
+                }
+                requestAnimationFrame(animateDrop);
+            }
+        }
+
+        // --- Game Core Functions ---
+
+        function initializeGame() {
+            const gameHeight = gameContainer.clientHeight; 
+            birdY = gameHeight / 2 - birdSize / 2;
+            birdVelocity = 0;
+            pipes = [];
+            badBirds = []; 
+            healthBirds = []; 
+            score = 0;
+            frameCount = 0;
+            gameStarted = false;
+            gameOver = false;
+            isBlockingFirstJump = false; // Reset the flag
+            
+            health = 100; 
+            updateHealthBar(health); 
+
+            changeBird(currentBirdName); 
+
+            flySound.pause(); 
+            warmupSound.currentTime = 0; 
+            warmupSound.play().catch(e => console.log('Warmup audio failed to auto-play:', e)); 
+
+            // Reset UI
+            bird.style.top = `${birdY}px`;
+            bird.style.transform = 'rotate(0deg)';
+            bird.style.boxShadow = 'none'; 
+            scoreDisplay.innerText = score;
+            gameOverMessage.classList.add('hidden'); 
+            winPopup.classList.add('hidden');
+            startMessage.classList.add('hidden'); 
+
+            rulesAccepted = false;
+            rulesModal.classList.remove('hidden');
+
+            document.querySelectorAll('.pipe').forEach(pipe => pipe.remove());
+            document.querySelectorAll('.bad-bird').forEach(b => b.remove()); 
+            document.querySelectorAll('.health-bird').forEach(h => h.remove()); 
+            document.querySelectorAll('.blood-drop').forEach(d => d.remove()); 
+
+            dropdownOptions.classList.remove('open');
+            dropdownArrow.style.transform = 'rotate(0deg)';
+
+            requestAnimationFrame(gameLoop);
+        }
+        
+        /**
+         * Closes the rules modal and sets the flag to block the next jump.
+         */
+        function acceptRules() {
+            rulesAccepted = true;
+            rulesModal.classList.add('hidden');
+            startMessage.classList.remove('hidden');
+            isBlockingFirstJump = true; // <<< FIX: Set the flag to true
+        }
+
+
+        function gameLoop() {
+            if (gameOver) return; 
+
+            if (gameStarted && rulesAccepted) { 
+                
+                // --- 1. Physics (Bird) ---
+                birdVelocity += gravity; 
+                birdY += birdVelocity;
+
+                if (birdY < 0) {
+                    birdY = 0;
+                    handleGameOver(); 
+                    return;
+                }
+                if (birdY + birdSize > gameContainer.clientHeight) {
+                    birdY = gameContainer.clientHeight - birdSize;
+                    handleGameOver();
+                    return;
+                }
+                
+                let rotation = Math.min(Math.max(birdVelocity * 4, -30), 90);
+                bird.style.transform = `rotate(${rotation}deg)`;
+                bird.style.top = `${birdY}px`;
+
+                // --- 2. Obstacle Logic ---
+                frameCount++;
+
+                if (frameCount % pipeSpawnInterval === 0) {
+                    createPipePair();
+                }
+                
+                if (frameCount % badBirdSpawnInterval === 0) {
+                    spawnBadBird();
+                }
+
+                if (frameCount % healthBirdSpawnInterval === 0) {
+                    spawnHealthBird();
+                }
+
+
+                // Move and check pipes
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    let pipe = pipes[i];
+                    pipe.x -= pipeSpeed;
+                    
+                    pipe.top.style.left = `${pipe.x}px`;
+                    pipe.bottom.style.left = `${pipe.x}px`;
+                    
+                    if (!pipe.passed && pipe.x + pipeWidth < bird.offsetLeft) {
+                        pipe.passed = true;
+                        score++;
+                        scoreDisplay.innerText = score;
+                        if (score >= winScore) handleWin(); 
+                    }
+
+                    if (checkCollision(pipe)) {
+                        handleGameOver();
+                        return;
+                    }
+
+                    if (pipe.x + pipeWidth < 0) {
+                        gameContainer.removeChild(pipe.top);
+                        gameContainer.removeChild(pipe.bottom);
+                        pipes.splice(i, 1);
+                    }
+                }
+                
+                // Move and check bad birds ('DC')
+                for (let i = badBirds.length - 1; i >= 0; i--) {
+                    let badBird = badBirds[i];
+                    badBird.x -= badBirdSpeed;
+                    badBird.el.style.left = `${badBird.x}px`;
+                    
+                    if (checkObjectCollision(badBird, badBirdRadius)) {
+                        
+                        health -= damageAmount; 
+                        updateHealthBar(health);
+                        
+                        hitSound.currentTime = 0;
+                        hitSound.play().catch(e => console.log('Hit audio failed:', e));
+                        
+                        dropBlood(bird.offsetLeft, birdY);
+
+                        bird.style.boxShadow = '0 0 12px 6px rgba(255, 0, 0, 0.7)';
+                        setTimeout(() => {
+                            if (!gameOver) {
+                                bird.style.boxShadow = 'none';
+                            }
+                        }, 300);
+
+                        if (health <= 0) {
+                            handleGameOver();
+                            return;
+                        }
+
+                        gameContainer.removeChild(badBird.el);
+                        badBirds.splice(i, 1);
+                        continue; 
+                    }
+                    
+                    if (badBird.x + badBirdSize < 0) {
+                        gameContainer.removeChild(badBird.el);
+                        badBirds.splice(i, 1);
+                    }
+                }
+
+                // Move and check health birds
+                for (let i = healthBirds.length - 1; i >= 0; i--) {
+                    let healthBird = healthBirds[i];
+                    healthBird.x -= healthBirdSpeed;
+                    healthBird.el.style.left = `${healthBird.x}px`;
+
+                    if (checkObjectCollision(healthBird, healthBirdRadius)) {
+                        
+                        health = Math.min(100, health + healAmount); 
+                        updateHealthBar(health);
+                        
+                        // Using a different sound for healing
+                        winSound.currentTime = 0;
+                        winSound.play().catch(e => console.log('Heal audio failed:', e));
+
+                        bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 0.7)';
+                        setTimeout(() => {
+                            if (!gameOver) {
+                                bird.style.boxShadow = 'none';
+                            }
+                        }, 300);
+
+                        gameContainer.removeChild(healthBird.el);
+                        healthBirds.splice(i, 1);
+                        continue; 
+                    }
+
+                    if (healthBird.x + healthBirdSize < 0) {
+                        gameContainer.removeChild(healthBird.el);
+                        healthBirds.splice(i, 1);
+                    }
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function createPipePair() {
+            const currentHeight = gameContainer.clientHeight;
+            const currentWidth = gameContainer.clientWidth;
+            const gapTop = Math.random() * (currentHeight - pipeGap - 100) + 50;
+            
+            const topPipe = document.createElement('div');
+            topPipe.className = 'pipe pipe-top'; 
+            topPipe.style.height = `${gapTop}px`;
+            topPipe.style.left = `${currentWidth}px`;
+            
+            const bottomPipe = document.createElement('div');
+            bottomPipe.className = 'pipe pipe-bottom';
+            bottomPipe.style.height = `${currentHeight - gapTop - pipeGap}px`;
+            bottomPipe.style.left = `${currentWidth}px`;
+            
+            gameContainer.appendChild(topPipe);
+            gameContainer.appendChild(bottomPipe);
+            
+            pipes.push({
+                top: topPipe,
+                bottom: bottomPipe,
+                x: currentWidth,
+                passed: false
+            });
+        }
+        
+        function spawnBadBird() {
+            const currentHeight = gameContainer.clientHeight;
+            const badBirdY = Math.random() * (currentHeight - badBirdSize - 100) + 50; 
+            const badBirdEl = document.createElement('div');
+            badBirdEl.className = 'bad-bird';
+            badBirdEl.style.top = `${badBirdY}px`;
+            badBirdEl.style.left = `${gameContainer.clientWidth}px`;
+            
+            gameContainer.appendChild(badBirdEl);
+            
+            badBirds.push({
+                el: badBirdEl,
+                x: gameContainer.clientWidth,
+                y: badBirdY
+            });
+        }
+
+        function spawnHealthBird() {
+            const currentHeight = gameContainer.clientHeight;
+            const healthBirdY = Math.random() * (currentHeight - healthBirdSize - 100) + 50; 
+            const healthBirdEl = document.createElement('div');
+            healthBirdEl.className = 'health-bird';
+            healthBirdEl.style.top = `${healthBirdY}px`;
+            healthBirdEl.style.left = `${gameContainer.clientWidth}px`;
+            
+            gameContainer.appendChild(healthBirdEl);
+            
+            healthBirds.push({
+                el: healthBirdEl,
+                x: gameContainer.clientWidth,
+                y: healthBirdY
+            });
+        }
+
+
+        function isCollidingWithRectangle(cx, cy, radius, rx, ry, rw, rh) {
+            let closestX = Math.max(rx, Math.min(cx, rx + rw));
+            let closestY = Math.max(ry, Math.min(cy, ry + rh));
+            let distanceX = cx - closestX;
+            let distanceY = cy - closestY;
+            let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+            return distanceSquared < (radius * radius);
+        }
+        
+        function checkObjectCollision(object, objectRadius) {
+            const birdCenterX = bird.offsetLeft + birdRadius;
+            const birdCenterY = birdY + birdRadius;
+            
+            const objectCenterX = object.x + objectRadius;
+            const objectCenterY = object.y + objectRadius;
+            
+            const dx = birdCenterX - objectCenterX;
+            const dy = birdCenterY - objectCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            return distance < (birdRadius + objectRadius);
+        }
+
+        function checkCollision(pipe) {
+            const birdCenterX = bird.offsetLeft + birdRadius;
+            const birdCenterY = birdY + birdRadius;
+            
+            if (isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, 0, pipeWidth, parseFloat(pipe.top.style.height))) {
+                return true;
+            }
+
+            const pipeBottomY = gameContainer.clientHeight - parseFloat(pipe.bottom.style.height);
+            if (isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, pipeBottomY, pipeWidth, parseFloat(pipe.bottom.style.height))) {
+                return true;
+            }
+
+            return false;
+        }
+        
+        function handleJump(e) {
+            // Check if the click was on the UI elements. If so, ignore.
+            if (e && (e.target.closest('#settings-panel') || e.target.closest('#rules-modal'))) {
+                return;
+            }
+
+            if (!rulesAccepted) return; 
+
+            // <<< FIX: Check for the blocking flag
+            if (isBlockingFirstJump) {
+                isBlockingFirstJump = false; // Consume the flag
+                return; // Do nothing, this was the click on the "Got It" button
+            }
+
+            if (gameOver) {
+                initializeGame();
+                return;
+            }
+            if (!gameStarted) {
+                gameStarted = true;
+                startMessage.classList.add('hidden');
+                
+                warmupSound.pause(); 
+
+                flySound.loop = true;
+                flySound.currentTime = 0;
+                flySound.play().catch(err => console.log('Flying audio failed to start loop:', err));
+            }
+            
+            birdVelocity = jumpForce;
+        }
+        
+        function handleGameOver() {
+            if (gameOver) return; 
+            gameOver = true;
+            
+            flySound.pause();
+            
+            hitSound.currentTime = 0;
+            hitSound.play().catch(e => console.log('Game Over audio failed:', e));
+            
+            bird.style.boxShadow = '0 0 15px 8px rgba(255, 0, 0, 1)'; 
+            
+            gameOverMessage.classList.remove('hidden'); 
+        }
+
+        function handleWin() {
+            if (gameOver) return; 
+            gameOver = true;
+
+            flySound.pause();
+            
+            winSound.currentTime = 0;
+            winSound.play().catch(e => console.log('Win audio failed:', e));
+
+            bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 1)'; 
+
+            winPopup.classList.remove('hidden');
+        }
+
+        // --- Custom Dropdown Event Listeners ---
+        // These listeners stop the click from bubbling up to the document,
+        // which would otherwise trigger a jump.
+        dropdownHeader.addEventListener('click', (e) => {
+            if (gameStarted || !rulesAccepted) return; 
+            e.stopPropagation(); // Stop click from bubbling to document
+
+            const isOpen = dropdownOptions.classList.toggle('open');
+            if (isOpen) {
+                dropdownArrow.style.transform = 'rotate(180deg)';
+            } else {
+                dropdownArrow.style.transform = 'rotate(0deg)';
+            }
+        });
+
+        optionButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (gameStarted || !rulesAccepted) return;
+                e.stopPropagation(); // Stop click from bubbling
+                changeBird(e.currentTarget.dataset.bird);
+            });
+        });
+
+        // --- Rules Modal Listener ---
+        rulesAcceptButton.addEventListener('click', acceptRules);
+
+        // --- Game Event Listeners (Listen on document) ---
+        document.addEventListener('click', handleJump);
+        
+        document.addEventListener('touchstart', (e) => {
+            // Check if the touch was on the UI elements. If so, ignore.
+            if (e.target.closest('#settings-panel') || e.target.closest('#rules-modal')) {
+                return;
+            }
+            e.preventDefault(); 
+            handleJump(e);
+        }, { passive: false });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                handleJump(e);
+            }
+        });
+
+        // --- Initial Game Setup ---
+        window.onload = initializeGame;
+
+    </script>
+</body>
+</html>
+
+
+ 
