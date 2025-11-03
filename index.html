@@ -3,83 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flappy Bird (DC Academy edition)</title>
+    <title>Flappy Bird (DC Academy Edition)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         body {
             font-family: "Inter", sans-serif;
+            -webkit-user-select: none;  /* Prevent selection on mobile */
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
-
-        /* --- Custom Dropdown Styles --- */
-        #dropdown-menu {
-            position: relative;
-        }
-
-        #dropdown-header {
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 1.25rem;
-            background-color: #4B5563; 
-            border-radius: 0.5rem;
-            color: white;
-            font-weight: bold;
-            transition: background-color 0.15s ease;
-        }
-
-        #dropdown-header:hover {
-            background-color: #6B7280; 
-        }
-        
-        #dropdown-options {
-            position: absolute;
-            top: 100%; 
-            left: 0;
-            right: 0;
-            background-color: #374151; 
-            border-radius: 0 0 0.5rem 0.5rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            z-index: 30; 
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-        }
-
-        #dropdown-options.open {
-            max-height: 200px; 
-            padding: 0.75rem;
-        }
-
-        .bird-option-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.5rem;
-            margin: 0.25rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.15s ease, transform 0.15s ease;
-        }
-        .bird-option-btn:hover {
-            background-color: #4B5563;
-            transform: translateY(-2px);
-        }
-        .bird-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            border: 2px solid transparent;
-            margin-bottom: 0.25rem;
-        }
-        .selected .bird-icon {
-            border-color: #F59E0B; 
-            box-shadow: 0 0 5px #F59E0B;
-        }
-
 
         /* --- Game Styles --- */
         #game-container {
@@ -106,6 +41,7 @@
             100% { background-position: -200% 0; }
         }
 
+        /* PERFECT CIRCLE FIX FOR BIRD */
         #bird {
             background-image: url('mainak.png');
             background-color: transparent;
@@ -116,11 +52,12 @@
             width: 40px;
             height: 40px;
             border-radius: 50%; 
+            aspect-ratio: 1 / 1; /* Ensures perfect circle */
 
             position: absolute;
             top: 50%;
             left: 50px;
-            transition: transform 0.1s linear, box-shadow 0.1s linear;
+            transition: transform 0.1s linear, box-shadow 0.1s linear, opacity 0.1s linear;
             z-index: 10;
         }
 
@@ -129,6 +66,7 @@
             width: 65px;
             border-radius: 0.5rem;
             z-index: 5;
+            transition: opacity 0.3s;
         }
         
         .pipe-top, .pipe-bottom {
@@ -186,17 +124,117 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 2rem;
-            border-radius: 1rem;
+            background: rgba(255, 255, 255, 1);
+            padding: 2.5rem 1.5rem; /* Increased vertical padding for elongation */
+            border-radius: 1.5rem;
             text-align: center;
             font-weight: bold;
             z-index: 20;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            width: 80%;
-            max-width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            width: 90%;
+            max-width: 450px;
+            height: auto;
+        }
+        
+        /* --- Carousel Specific Styles --- */
+        #carousel-slides {
+            height: 400px; /* ELONGATED CAROUSEL */
+            position: relative;
         }
 
+        .carousel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.5s ease-in-out;
+            padding: 1rem 0.5rem;
+            text-align: center;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            z-index: 10;
+        }
+        
+        /* UPDATED RULES LIST UI */
+        .rules-list {
+            list-style-type: none;
+            padding: 1rem; 
+            margin: 0 auto 1.5rem auto;
+            width: 100%;
+            max-width: 320px;
+            background: #F3F4F6; /* Lighter background */
+            border-radius: 0.75rem;
+            box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.05);
+            font-weight: normal;
+        }
+        
+        .rules-list li {
+            padding: 0.5rem 0; /* Adjusted padding */
+            font-size: 0.9rem; /* SMALLER FONT SIZE FOR RULES */
+            border-bottom: 1px solid #E5E7EB; 
+            display: flex;
+            text-align: left;
+            align-items: center;
+            line-height: 1.4;
+            color: #4B5563; /* Darker text */
+        }
+
+        .rules-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .rules-list li::before {
+            content: '•';
+            color: #3B82F6;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+            margin-right: 0.5em;
+            font-size: 1.2rem;
+            flex-shrink: 0; /* Prevent the bullet from shrinking */
+        }
+
+
+        /* PERFECT CIRCLE FIX FOR ICON */
+        .slide-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            aspect-ratio: 1 / 1; /* Ensures perfect circle */
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 1rem;
+            background-color: #eee;
+            border: 3px solid #333;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .slide-icon:hover {
+            transform: scale(1.05);
+        }
+
+        .slide-icon.selected {
+            border-color: #10B981;
+            box-shadow: 0 0 10px 5px rgba(16, 185, 129, 0.6);
+        }
+        
+        /* --- Score and Health --- */
         #score {
             position: absolute;
             top: 15px;
@@ -206,9 +244,7 @@
             font-weight: bold;
             color: white;
             z-index: 15;
-            -webkit-text-stroke: 0px #222; 
-            text-stroke: 0px #222;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
         }
         
         #health-bar-container {
@@ -247,32 +283,6 @@
 </head>
 <body class="bg-gray-800 flex flex-col items-center justify-center h-screen w-screen overflow-hidden">
 
-    <!-- Custom Dropdown UI for Bird Selector -->
-    <div id="settings-panel" class="mb-4 w-full max-w-sm sm:max-w-md">
-        <div id="dropdown-menu">
-            <div id="dropdown-header">
-                <span id="dropdown-current-text">Choose Your Flyer (Current: Mainak)</span>
-                <svg id="dropdown-arrow" class="w-5 h-5 transition-transform duration-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.23 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            <div id="dropdown-options" class="flex justify-around">
-                <div data-bird="Mainak" class="bird-option-btn selected">
-                    <div class="bird-icon" style="background-image: url('mainak.png');"></div>
-                    <span class="text-xs text-white">Mainak</span>
-                </div>
-                <div data-bird="dildo" class="bird-option-btn">
-                    <div class="bird-icon" style="background-image: url('dildo.png');"></div>
-                    <span class="text-xs text-white">dildo</span>
-                </div>
-                <div data-bird="rounak" class="bird-option-btn">
-                    <div class="bird-icon" style="background-image: url('rounak.png');"></div>
-                    <span class="text-xs text-white">rounak</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Game Container -->
     <div id="game-container">
         
@@ -283,25 +293,67 @@
         <div id="bird"></div>
         <div id="score">0</div>
         
-        <!-- Game Rules Modal (Updated Text) -->
-        <div id="rules-modal" class="message-popup text-base">
-            <h2 class="font-bold text-xl mb-3 text-gray-700">Game Rules</h2>
-            <ul class="text-left space-y-2 mb-6 list-disc list-inside text-gray-600">
-                <li>Objective: Fly through the pipes to score points.</li>
-                <li>Controls: Tap or press Space to jump.</li>
-                <li>Health: You start with 100% health.</li>
-                <li>DC Lord: Hitting them drains health. Avoid!</li>
-                <li>Shourja Lord: Collect them to restore 5% health.</li>
-                <li>Goal: Reach 69 points to win!</li>
-            </ul>
-            <button id="rules-accept-btn" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
-                Got It, Let's Fly!
-            </button>
-        </div>
+        <!-- Pre-Game Carousel Modal -->
+        <div id="pregame-carousel" class="message-popup text-base">
+            <div id="carousel-slides" class="relative">
 
+                <!-- Slide 1: Rules -->
+                <div class="carousel-slide active" data-index="0" data-character="">
+                    <h2 class="font-bold text-3xl mb-4 text-gray-800 border-b pb-2 w-full max-w-xs">Game Rules</h2>
+                    <ul class="rules-list text-gray-700">
+                        <li>Goal: Score 69 points to win!</li>
+                        <li>Controls: Tap or press Space to fly.</li>
+                        <li>Health: Starts at 100%. Don't let it hit 0!</li>
+                        <li>Pipes: Avoid hitting them, or you crash.</li>
+                        <li>DC Lord (Enemy): Hitting them costs 20% health.</li>
+                        <li>Shourja Lord (Health): Collect these to restore 5% health.</li>
+                    </ul>
+                </div>
+                
+                <!-- Slide 2: Dildo -->
+                <div class="carousel-slide" data-index="1" data-character="Dildo">
+                    <h2 class="font-bold text-3xl mb-6 text-gray-800">🐤 Dildo - The Tank</h2>
+                    <div class="slide-icon" data-character="Dildo" style="background-image: url('dildo.png');"></div>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Survives one pipe hit (bounce), but has slippery control.</p>
+                    <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Dildo">
+                        Select Dildo
+                    </button>
+                </div>
 
-        <div id="start-message" class="message-popup text-xl hidden">
-            Tap to Start
+                <!-- Slide 3: Mainak -->
+                <div class="carousel-slide" data-index="2" data-character="Mainak">
+                    <h2 class="font-bold text-3xl mb-6 text-gray-800">🕶️ Mainak - The Ghost</h2>
+                    <div class="slide-icon" data-character="Mainak" style="background-image: url('mainak.png');"></div>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: **1.25x faster horizontal speed** and invisible for 1.75s every 10s. Default flight physics.</p>
+                    <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Mainak">
+                        Select Mainak
+                    </button>
+                </div>
+                
+                <!-- Slide 4: Rounak -->
+                <div class="carousel-slide" data-index="3" data-character="Rounak">
+                    <h2 class="font-bold text-3xl mb-6 text-gray-800">💥 Rounak - The Breaker</h2>
+                    <div class="slide-icon" data-character="Rounak" style="background-image: url('rounak.png');"></div>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Breaks the first pipe it hits; every 10s turns 10% visible for 1s.</p>
+                    <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Rounak">
+                        Select Rounak
+                    </button>
+                </div>
+                
+            </div>
+            
+            <div class="flex justify-between mt-6">
+                <button id="prev-btn" class="bg-gray-300 text-gray-700 font-extrabold py-2 px-6 rounded-full shadow-lg transition duration-150 hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed">
+                    &larr; Prev
+                </button>
+                <div id="char-selection-display" class="font-bold text-lg text-gray-800 flex items-center bg-yellow-100 px-3 rounded-full shadow-inner">
+                    <span class="mr-1 text-sm">Selected:</span><span id="selected-char-name" class="text-indigo-600">Mainak</span>
+                </div>
+                <button id="next-btn" class="bg-indigo-600 text-white font-extrabold py-2 px-6 rounded-full shadow-lg hover:bg-indigo-700 transition duration-150 hidden">
+                    Next &rarr;
+                </button>
+                <button id="start-game-btn" class="bg-green-600 text-white font-extrabold py-2 px-6 rounded-full shadow-lg hover:bg-green-700 transition duration-150 hidden">Start Game!</button>
+            </div>
         </div>
 
         <div id="game-over" class="message-popup text-2xl hidden">
@@ -310,7 +362,9 @@
                  onerror="this.style.display='none'" 
                  alt="Game Over Graphic"
                  class="my-4 rounded-lg shadow-inner">
-            <p class="text-base mt-2">Tap to restart</p>
+            <button id="restart-btn" class="mt-4 bg-red-600 text-white font-extrabold py-3 px-8 rounded-full shadow-lg hover:bg-red-700 transition duration-150">
+                Restart Game
+            </button>
         </div>
 
         <div id="win-popup" class="message-popup text-2xl hidden">
@@ -320,7 +374,9 @@
                  onerror="this.style.display='none'" 
                  alt="Win Popup Graphic"
                  class="my-4 rounded-lg shadow-inner">
-            <p class="text-base mt-2">Tap to play again</p>
+            <button id="play-again-btn" class="mt-4 bg-green-600 text-white font-extrabold py-3 px-8 rounded-full shadow-lg hover:bg-green-700 transition duration-150">
+                Play Again
+            </button>
         </div>
     </div>
 
@@ -329,20 +385,26 @@
         const gameContainer = document.getElementById('game-container');
         const bird = document.getElementById('bird');
         const scoreDisplay = document.getElementById('score');
-        const startMessage = document.getElementById('start-message');
         const gameOverMessage = document.getElementById('game-over');
         const winPopup = document.getElementById('win-popup');
         const healthBar = document.getElementById('health-bar'); 
-        const rulesModal = document.getElementById('rules-modal'); 
-        const rulesAcceptButton = document.getElementById('rules-accept-btn'); 
         
-        // Custom Dropdown elements
-        const dropdownHeader = document.getElementById('dropdown-header');
-        const dropdownOptions = document.getElementById('dropdown-options');
-        const dropdownArrow = document.getElementById('dropdown-arrow');
-        const dropdownCurrentText = document.getElementById('dropdown-current-text');
-        const optionButtons = document.querySelectorAll('.bird-option-btn');
-        let currentBirdName = 'Mainak'; 
+        // Carousel Elements
+        const carousel = document.getElementById('pregame-carousel');
+        const slides = document.querySelectorAll('.carousel-slide');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const selectedCharName = document.getElementById('selected-char-name');
+        const slideIcons = document.querySelectorAll('.slide-icon');
+
+        // Select character buttons
+        const selectCharButtons = document.querySelectorAll('.select-char-btn');
+        
+        // Restart and Play Again Buttons
+        const restartBtn = document.getElementById('restart-btn'); 
+        const playAgainBtn = document.getElementById('play-again-btn'); 
+
 
         // --- Audio Setup ---
         const flySound = new Audio('while-flying.mp3'); 
@@ -354,70 +416,416 @@
         // --- Game Constants ---
         const birdSize = 40;
         const birdRadius = birdSize / 2; 
-        const gravity = 0.3;              
-        const jumpForce = -5.0;           
         const pipeWidth = 65;
         const pipeGap = 180;             
-        const pipeSpeed = 1.8;           
         const pipeSpawnInterval = 120;   
-        
-        // DC Bad Bird Constants 
         const badBirdSize = 55;             
         const badBirdRadius = badBirdSize / 2;
-        const badBirdSpeed = 2.8;        
         const badBirdSpawnInterval = 180;  
         const damageAmount = 20;            
-
-        // Health Bird Constants
         const healthBirdSize = 40;
         const healthBirdRadius = healthBirdSize / 2;
-        const healthBirdSpeed = 1.5;
         const healthBirdSpawnInterval = 300; 
         const healAmount = 5;
+        const winScore = 69; 
 
-        const winScore = 69;             
+        // Base Physics Constants
+        const BASE_GRAVITY = 0.3;              
+        const BASE_JUMP_FORCE = -6.0;           
+        const BASE_PIPE_SPEED = 1.8;           
+        const BASE_BAD_BIRD_SPEED = 2.8;        
+        
+        // --- Character Configuration ---
+        const CHARACTERS = {
+            Dildo: { 
+                name: 'Dildo', 
+                file: 'dildo.png',
+                icon: '🐤',
+                slipperyControl: true,
+                initialInvulnerable: true, 
+                speedMultiplier: 1.0,
+                visibilityInterval: 0, 
+            },
+            Mainak: {
+                name: 'Mainak',
+                file: 'mainak.png',
+                icon: '🕶️',
+                slipperyControl: false,
+                initialInvulnerable: false,
+                speedMultiplier: 1.25, // 1.25x horizontal speed
+                visibilityInterval: 600, 
+                visibilityDuration: 105, // 1.75 seconds * 60 FPS
+                visibilityOpacity: 0.05,
+                autoFlapOffset: 0.0 
+            },
+            Rounak: {
+                name: 'Rounak',
+                file: 'rounak.png',
+                icon: '💥',
+                slipperyControl: false,
+                initialInvulnerable: true,
+                speedMultiplier: 0.95,
+                visibilityInterval: 600,
+                visibilityDuration: 60,
+                visibilityOpacity: 0.10,
+                autoFlapOffset: 0.0 
+            }
+        };
 
-        // --- Game State Variables ---
+        // --- Dynamic Game State Variables ---
         let birdY, birdVelocity, pipes, badBirds, healthBirds, score, frameCount, gameStarted, gameOver;
         let health; 
-        let rulesAccepted = false; 
-        let isBlockingFirstJump = false; // <<< NEW/FIX: Flag to "eat" the first click.
+        let currentCharacter = 'Mainak'; // Default selection
+        
+        // Dynamic Physics variables
+        let dynamicGravity = BASE_GRAVITY;
+        let dynamicJumpForce = BASE_JUMP_FORCE;
+        let dynamicPipeSpeed = BASE_PIPE_SPEED;
+        let dynamicBadBirdSpeed = BASE_BAD_BIRD_SPEED;
 
-        // --- Bird Selector Logic ---
+        // Character Ability States
+        let dilloBounceUsed = true;
+        let rounakBreakUsed = true;
+        
+        // Carousel State
+        let currentSlide = 0;
+        const SLIDE_COUNT = slides.length; 
 
-        function changeBird(birdName) {
-            currentBirdName = birdName;
-            let fileName = '';
-            switch (birdName) {
-                case 'dildo':
-                    fileName = 'dildo.png';
-                    break;
-                case 'Mainak':
-                    fileName = 'mainak.png';
-                    break;
-                case 'rounak':
-                    fileName = 'rounak.png';
-                    break;
-                default:
-                    fileName = 'mainak.png';
+
+        // --- Character and Physics Logic ---
+        
+        /**
+         * Updates the visual selection state of the character icons.
+         * @param {string} charName - The name of the currently selected character.
+         */
+        function updateCharacterSelectionVisuals(charName) {
+            // Remove 'selected' from all icons
+            document.querySelectorAll('.slide-icon').forEach(i => i.classList.remove('selected'));
+            // Find and add 'selected' to the correct icon element
+            const selectedIcon = document.querySelector(`.slide-icon[data-character="${charName}"]`);
+            if (selectedIcon) {
+                selectedIcon.classList.add('selected');
             }
-            bird.style.backgroundImage = `url('${fileName}')`;
-            
-            dropdownCurrentText.textContent = `Choose Your Flyer (Current: ${birdName})`;
-
-            optionButtons.forEach(btn => {
-                if (btn.dataset.bird === birdName) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
-            });
-            
-            dropdownOptions.classList.remove('open');
-            dropdownArrow.style.transform = 'rotate(0deg)';
         }
 
-        // --- Health Bar and Blood Functions ---
+        /**
+         * Applies the selected character's unique abilities and physics modifications.
+         * @param {string} characterName - The name of the selected character.
+         */
+        function applyCharacterAbilities(characterName) {
+            const char = CHARACTERS[characterName];
+            currentCharacter = characterName;
+            
+            // 1. Visual/Cosmetic
+            bird.style.backgroundImage = `url('${char.file}')`;
+            selectedCharName.textContent = char.name;
+            updateCharacterSelectionVisuals(characterName); // Update visuals
+
+            // 2. Dynamic Speed
+            dynamicPipeSpeed = BASE_PIPE_SPEED * char.speedMultiplier;
+            dynamicBadBirdSpeed = BASE_BAD_BIRD_SPEED * char.speedMultiplier;
+            
+            // 3. Dynamic Physics Adjustments (Gravity and Jump Force)
+            // Start with base values for all characters
+            dynamicGravity = BASE_GRAVITY;
+            dynamicJumpForce = BASE_JUMP_FORCE;
+
+            // Custom physics for Dildo (Lighter)
+            if (characterName === 'Dildo') { 
+                dynamicGravity = BASE_GRAVITY * 0.75; 
+                dynamicJumpForce = BASE_JUMP_FORCE * 1.0; 
+            } 
+            // Custom physics for Rounak (Heavier/Slippery)
+            else if (characterName === 'Rounak') {
+                // Rounak uses the heavier 1.4x gravity
+                dynamicGravity = BASE_GRAVITY * 1.4; 
+                dynamicJumpForce = BASE_JUMP_FORCE * 0.9;  
+            }
+            // Mainak uses base physics, as requested.
+
+
+            // 4. Invulnerability State (Reset ability usage when character is selected)
+            dilloBounceUsed = !(characterName === 'Dildo' && char.initialInvulnerable); 
+            rounakBreakUsed = !(characterName === 'Rounak' && char.initialInvulnerable);
+        }
+
+        // --- Carousel Logic ---
+        
+        function updateCarouselControls() {
+            // Update Previous Button state
+            if (currentSlide === 0) {
+                prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                prevBtn.disabled = true;
+            } else {
+                prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                prevBtn.disabled = false;
+            }
+
+            // Update Next/Start Button state
+            if (currentSlide === SLIDE_COUNT - 1) {
+                nextBtn.classList.add('hidden');
+                startGameBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                startGameBtn.classList.add('hidden');
+            }
+        }
+
+        function showSlide(index, direction) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                
+                // Adjust transition for slide direction
+                if (direction === 'next') {
+                    slide.style.transform = `translateX(${i < index ? '-100%' : '100%'})`;
+                } else if (direction === 'prev') {
+                    slide.style.transform = `translateX(${i > index ? '100%' : '-100%'})`;
+                } else {
+                     slide.style.transform = `translateX(${i === index ? '0' : '100%'})`;
+                }
+            });
+
+            const currentSlideElement = slides[index];
+            currentSlideElement.classList.add('active');
+            currentSlideElement.style.transform = 'translateX(0)';
+
+            currentSlide = index;
+            updateCarouselControls();
+        }
+
+        // --- Game Core Functions ---
+
+        function initializeGame() {
+            const gameHeight = gameContainer.clientHeight; 
+            birdY = gameHeight / 2 - birdSize / 2;
+            birdVelocity = 0;
+            pipes = [];
+            badBirds = []; 
+            healthBirds = []; 
+            score = 0;
+            frameCount = 0;
+            gameStarted = false;
+            gameOver = false;
+            
+            health = 100; 
+            updateHealthBar(health); 
+
+            // Initialize character state based on default/last selection (Important for visual state)
+            applyCharacterAbilities(currentCharacter); 
+
+            flySound.pause(); 
+            warmupSound.currentTime = 0; 
+            warmupSound.play().catch(e => console.log('Warmup audio failed to auto-play:', e)); 
+
+            // Reset UI
+            bird.style.top = `${birdY}px`;
+            bird.style.transform = 'rotate(0deg)';
+            bird.style.boxShadow = 'none'; 
+            bird.style.opacity = 1.0; // Ensure visible
+            scoreDisplay.innerText = score;
+            gameOverMessage.classList.add('hidden'); 
+            winPopup.classList.add('hidden');
+            carousel.classList.remove('hidden'); 
+            
+            document.querySelectorAll('.pipe').forEach(pipe => pipe.remove());
+            document.querySelectorAll('.bad-bird').forEach(b => b.remove()); 
+            document.querySelectorAll('.health-bird').forEach(h => h.remove()); 
+            document.querySelectorAll('.blood-drop').forEach(d => d.remove()); 
+
+            // Start at Rules slide
+            showSlide(0, 'init'); 
+
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            carousel.classList.add('hidden');
+            warmupSound.pause(); 
+
+            flySound.loop = true;
+            flySound.currentTime = 0;
+            flySound.play().catch(err => console.log('Flying audio failed to start loop:', err));
+        }
+
+
+        function gameLoop() {
+            if (gameOver) return; 
+
+            if (gameStarted) { 
+                
+                // --- 1. Physics (Bird) ---
+                const char = CHARACTERS[currentCharacter];
+
+                // Apply auto flap/hover for characters that have it
+                if (char.autoFlapOffset && currentCharacter === 'Mainak') {
+                    birdVelocity -= char.autoFlapOffset;
+                }
+                
+                birdVelocity += dynamicGravity; 
+                birdY += birdVelocity;
+
+                // Ceiling/Ground collision check
+                if (birdY < 0 || birdY + birdSize > gameContainer.clientHeight) {
+                    birdY = Math.max(0, Math.min(birdY, gameContainer.clientHeight - birdSize));
+                    handleGameOver(); 
+                    return;
+                }
+                
+                let rotation = Math.min(Math.max(birdVelocity * 4, -30), 90);
+                bird.style.transform = `rotate(${rotation}deg)`;
+                bird.style.top = `${birdY}px`;
+
+                // --- 2. Obstacle Logic ---
+                frameCount++;
+
+                // Visibility Logic (Mainak/Rounak)
+                if (char.visibilityInterval > 0) {
+                    // Check if 10 seconds (600 frames) have passed since the game started
+                    if (frameCount > 600) {
+                        const frameInInterval = frameCount % char.visibilityInterval;
+                        
+                        // The effect happens for 1.75 seconds (105 frames) at the beginning of the cycle for Mainak
+                        if (frameInInterval > 0 && frameInInterval < char.visibilityDuration) {
+                            bird.style.opacity = char.visibilityOpacity;
+                        } else {
+                            bird.style.opacity = 1.0;
+                        }
+                    } else {
+                        // Ensure bird is fully visible for the first 10 seconds
+                        bird.style.opacity = 1.0;
+                    }
+                }
+
+
+                // Condition to stop spawning pipes and enemies once the win score is hit
+                if (score < winScore) {
+                    if (frameCount % pipeSpawnInterval === 0) {
+                        createPipePair();
+                    }
+                    
+                    if (frameCount % badBirdSpawnInterval === 0) {
+                        spawnBadBird();
+                    }
+
+                    if (frameCount % healthBirdSpawnInterval === 0) {
+                        spawnHealthBird();
+                    }
+                }
+
+
+                // Move and check pipes
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    let pipe = pipes[i];
+                    pipe.x -= dynamicPipeSpeed;
+                    
+                    pipe.top.style.left = `${pipe.x}px`;
+                    pipe.bottom.style.left = `${pipe.x}px`;
+                    
+                    if (!pipe.passed && pipe.x + pipeWidth < bird.offsetLeft) {
+                        pipe.passed = true;
+                        score++;
+                        scoreDisplay.innerText = score;
+                        if (score >= winScore) handleWin(); 
+                    }
+
+                    if (checkCollision(pipe)) {
+                        // Collision handled internally (break/bounce) or returns true for game over
+                        if (gameOver) return;
+                        // If pipe was broken/bounced, it's removed from array in checkCollision, so continue
+                        if (pipes.indexOf(pipe) === -1) continue; 
+                    }
+
+                    if (pipe.x + pipeWidth < 0) {
+                        gameContainer.removeChild(pipe.top);
+                        gameContainer.removeChild(pipe.bottom);
+                        pipes.splice(i, 1);
+                    }
+                }
+                
+                // Move and check bad birds ('DC')
+                for (let i = badBirds.length - 1; i >= 0; i--) {
+                    let badBird = badBirds[i];
+                    badBird.x -= dynamicBadBirdSpeed;
+                    badBird.el.style.left = `${badBird.x}px`;
+                    
+                    if (checkObjectCollision(badBird, badBirdRadius)) {
+                        
+                        health -= damageAmount; 
+                        updateHealthBar(health);
+                        
+                        // Sound and Visual Feedback
+                        hitSound.currentTime = 0;
+                        hitSound.play().catch(e => console.log('Hit audio failed:', e));
+                        dropBlood(bird.offsetLeft, birdY);
+                        birdFlashRed();
+
+                        if (health <= 0) {
+                            handleGameOver();
+                            return;
+                        }
+
+                        gameContainer.removeChild(badBird.el);
+                        badBirds.splice(i, 1);
+                        continue; 
+                    }
+                    
+                    if (badBird.x + badBirdSize < 0) {
+                        gameContainer.removeChild(badBird.el);
+                        badBirds.splice(i, 1);
+                    }
+                }
+
+                // Move and check health birds
+                for (let i = healthBirds.length - 1; i >= 0; i--) {
+                    let healthBird = healthBirds[i];
+                    healthBird.x -= dynamicBadBirdSpeed;
+                    healthBird.el.style.left = `${healthBird.x}px`;
+
+                    if (checkObjectCollision(healthBird, healthBirdRadius)) {
+                        
+                        health = Math.min(100, health + healAmount); 
+                        updateHealthBar(health);
+                        
+                        // Sound and Visual Feedback
+                        winSound.currentTime = 0;
+                        winSound.play().catch(e => console.log('Heal audio failed:', e));
+                        birdFlashGreen();
+
+                        gameContainer.removeChild(healthBird.el);
+                        healthBirds.splice(i, 1);
+                        continue; 
+                    }
+
+                    if (healthBird.x + healthBirdSize < 0) {
+                        gameContainer.removeChild(healthBird.el);
+                        healthBirds.splice(i, 1);
+                    }
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Utility Functions ---
+
+        function birdFlashRed() {
+            bird.style.boxShadow = '0 0 12px 6px rgba(255, 0, 0, 0.7)';
+            setTimeout(() => {
+                if (!gameOver) {
+                    bird.style.boxShadow = 'none';
+                }
+            }, 300);
+        }
+
+        function birdFlashGreen() {
+            bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 0.7)';
+            setTimeout(() => {
+                if (!gameOver) {
+                    bird.style.boxShadow = 'none';
+                }
+            }, 300);
+        }
 
         function updateHealthBar(currentHealth) {
             healthBar.style.width = `${Math.max(0, currentHealth)}%`;
@@ -471,208 +879,7 @@
                 requestAnimationFrame(animateDrop);
             }
         }
-
-        // --- Game Core Functions ---
-
-        function initializeGame() {
-            const gameHeight = gameContainer.clientHeight; 
-            birdY = gameHeight / 2 - birdSize / 2;
-            birdVelocity = 0;
-            pipes = [];
-            badBirds = []; 
-            healthBirds = []; 
-            score = 0;
-            frameCount = 0;
-            gameStarted = false;
-            gameOver = false;
-            isBlockingFirstJump = false; // Reset the flag
-            
-            health = 100; 
-            updateHealthBar(health); 
-
-            changeBird(currentBirdName); 
-
-            flySound.pause(); 
-            warmupSound.currentTime = 0; 
-            warmupSound.play().catch(e => console.log('Warmup audio failed to auto-play:', e)); 
-
-            // Reset UI
-            bird.style.top = `${birdY}px`;
-            bird.style.transform = 'rotate(0deg)';
-            bird.style.boxShadow = 'none'; 
-            scoreDisplay.innerText = score;
-            gameOverMessage.classList.add('hidden'); 
-            winPopup.classList.add('hidden');
-            startMessage.classList.add('hidden'); 
-
-            rulesAccepted = false;
-            rulesModal.classList.remove('hidden');
-
-            document.querySelectorAll('.pipe').forEach(pipe => pipe.remove());
-            document.querySelectorAll('.bad-bird').forEach(b => b.remove()); 
-            document.querySelectorAll('.health-bird').forEach(h => h.remove()); 
-            document.querySelectorAll('.blood-drop').forEach(d => d.remove()); 
-
-            dropdownOptions.classList.remove('open');
-            dropdownArrow.style.transform = 'rotate(0deg)';
-
-            requestAnimationFrame(gameLoop);
-        }
         
-        /**
-         * Closes the rules modal and sets the flag to block the next jump.
-         */
-        function acceptRules() {
-            rulesAccepted = true;
-            rulesModal.classList.add('hidden');
-            startMessage.classList.remove('hidden');
-            isBlockingFirstJump = true; // <<< FIX: Set the flag to true
-        }
-
-
-        function gameLoop() {
-            if (gameOver) return; 
-
-            if (gameStarted && rulesAccepted) { 
-                
-                // --- 1. Physics (Bird) ---
-                birdVelocity += gravity; 
-                birdY += birdVelocity;
-
-                if (birdY < 0) {
-                    birdY = 0;
-                    handleGameOver(); 
-                    return;
-                }
-                if (birdY + birdSize > gameContainer.clientHeight) {
-                    birdY = gameContainer.clientHeight - birdSize;
-                    handleGameOver();
-                    return;
-                }
-                
-                let rotation = Math.min(Math.max(birdVelocity * 4, -30), 90);
-                bird.style.transform = `rotate(${rotation}deg)`;
-                bird.style.top = `${birdY}px`;
-
-                // --- 2. Obstacle Logic ---
-                frameCount++;
-
-                if (frameCount % pipeSpawnInterval === 0) {
-                    createPipePair();
-                }
-                
-                if (frameCount % badBirdSpawnInterval === 0) {
-                    spawnBadBird();
-                }
-
-                if (frameCount % healthBirdSpawnInterval === 0) {
-                    spawnHealthBird();
-                }
-
-
-                // Move and check pipes
-                for (let i = pipes.length - 1; i >= 0; i--) {
-                    let pipe = pipes[i];
-                    pipe.x -= pipeSpeed;
-                    
-                    pipe.top.style.left = `${pipe.x}px`;
-                    pipe.bottom.style.left = `${pipe.x}px`;
-                    
-                    if (!pipe.passed && pipe.x + pipeWidth < bird.offsetLeft) {
-                        pipe.passed = true;
-                        score++;
-                        scoreDisplay.innerText = score;
-                        if (score >= winScore) handleWin(); 
-                    }
-
-                    if (checkCollision(pipe)) {
-                        handleGameOver();
-                        return;
-                    }
-
-                    if (pipe.x + pipeWidth < 0) {
-                        gameContainer.removeChild(pipe.top);
-                        gameContainer.removeChild(pipe.bottom);
-                        pipes.splice(i, 1);
-                    }
-                }
-                
-                // Move and check bad birds ('DC')
-                for (let i = badBirds.length - 1; i >= 0; i--) {
-                    let badBird = badBirds[i];
-                    badBird.x -= badBirdSpeed;
-                    badBird.el.style.left = `${badBird.x}px`;
-                    
-                    if (checkObjectCollision(badBird, badBirdRadius)) {
-                        
-                        health -= damageAmount; 
-                        updateHealthBar(health);
-                        
-                        hitSound.currentTime = 0;
-                        hitSound.play().catch(e => console.log('Hit audio failed:', e));
-                        
-                        dropBlood(bird.offsetLeft, birdY);
-
-                        bird.style.boxShadow = '0 0 12px 6px rgba(255, 0, 0, 0.7)';
-                        setTimeout(() => {
-                            if (!gameOver) {
-                                bird.style.boxShadow = 'none';
-                            }
-                        }, 300);
-
-                        if (health <= 0) {
-                            handleGameOver();
-                            return;
-                        }
-
-                        gameContainer.removeChild(badBird.el);
-                        badBirds.splice(i, 1);
-                        continue; 
-                    }
-                    
-                    if (badBird.x + badBirdSize < 0) {
-                        gameContainer.removeChild(badBird.el);
-                        badBirds.splice(i, 1);
-                    }
-                }
-
-                // Move and check health birds
-                for (let i = healthBirds.length - 1; i >= 0; i--) {
-                    let healthBird = healthBirds[i];
-                    healthBird.x -= healthBirdSpeed;
-                    healthBird.el.style.left = `${healthBird.x}px`;
-
-                    if (checkObjectCollision(healthBird, healthBirdRadius)) {
-                        
-                        health = Math.min(100, health + healAmount); 
-                        updateHealthBar(health);
-                        
-                        // Using a different sound for healing
-                        winSound.currentTime = 0;
-                        winSound.play().catch(e => console.log('Heal audio failed:', e));
-
-                        bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 0.7)';
-                        setTimeout(() => {
-                            if (!gameOver) {
-                                bird.style.boxShadow = 'none';
-                            }
-                        }, 300);
-
-                        gameContainer.removeChild(healthBird.el);
-                        healthBirds.splice(i, 1);
-                        continue; 
-                    }
-
-                    if (healthBird.x + healthBirdSize < 0) {
-                        gameContainer.removeChild(healthBird.el);
-                        healthBirds.splice(i, 1);
-                    }
-                }
-            }
-            
-            requestAnimationFrame(gameLoop);
-        }
-
         function createPipePair() {
             const currentHeight = gameContainer.clientHeight;
             const currentWidth = gameContainer.clientWidth;
@@ -733,7 +940,7 @@
             });
         }
 
-
+        // Check collision between the bird's circle and a pipe's rectangle
         function isCollidingWithRectangle(cx, cy, radius, rx, ry, rw, rh) {
             let closestX = Math.max(rx, Math.min(cx, rx + rw));
             let closestY = Math.max(ry, Math.min(cy, ry + rh));
@@ -743,6 +950,7 @@
             return distanceSquared < (radius * radius);
         }
         
+        // Check collision between the bird's circle and another object's circle (bad/health birds)
         function checkObjectCollision(object, objectRadius) {
             const birdCenterX = bird.offsetLeft + birdRadius;
             const birdCenterY = birdY + birdRadius;
@@ -757,52 +965,96 @@
             return distance < (birdRadius + objectRadius);
         }
 
+        /**
+         * Checks for pipe collision and applies character-specific pipe abilities.
+         * @param {Object} pipe - The pipe object.
+         * @returns {boolean} True if actual collision occurs (game over), false otherwise.
+         */
         function checkCollision(pipe) {
             const birdCenterX = bird.offsetLeft + birdRadius;
             const birdCenterY = birdY + birdRadius;
             
-            if (isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, 0, pipeWidth, parseFloat(pipe.top.style.height))) {
-                return true;
+            const topPipeHeight = parseFloat(pipe.top.style.height);
+            const bottomPipeHeight = parseFloat(pipe.bottom.style.height);
+            const pipeBottomY = gameContainer.clientHeight - bottomPipeHeight;
+
+            let collisionDetected = false;
+
+            if (isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, 0, pipeWidth, topPipeHeight) ||
+                isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, pipeBottomY, pipeWidth, bottomPipeHeight)) {
+                collisionDetected = true;
             }
 
-            const pipeBottomY = gameContainer.clientHeight - parseFloat(pipe.bottom.style.height);
-            if (isCollidingWithRectangle(birdCenterX, birdCenterY, birdRadius, pipe.x, pipeBottomY, pipeWidth, parseFloat(pipe.bottom.style.height))) {
-                return true;
+            if (collisionDetected) {
+                // Dildo: Bounce on first hit (only for pipes)
+                if (currentCharacter === 'Dildo' && !dilloBounceUsed) { 
+                    dilloBounceUsed = true;
+                    birdVelocity = dynamicJumpForce * 1.5; // Large upward bounce
+                    birdFlashGreen(); // Visual feedback for successful bounce
+                    hitSound.currentTime = 0;
+                    hitSound.play().catch(e => console.log('Dildo bounce sound failed:', e));
+                    return false; // Collision ignored
+                }
+                
+                // Rounak: Break the first pipe
+                if (currentCharacter === 'Rounak' && !rounakBreakUsed) {
+                    rounakBreakUsed = true;
+                    // Visually "break" the pipe by removing it
+                    pipe.top.style.opacity = '0';
+                    pipe.bottom.style.opacity = '0';
+                    setTimeout(() => {
+                        pipe.top.remove();
+                        pipe.bottom.remove();
+                    }, 300);
+                    
+                    // Remove the pipe object from the pipes array
+                    const index = pipes.indexOf(pipe);
+                    if (index > -1) {
+                        pipes.splice(index, 1);
+                    }
+                    
+                    winSound.currentTime = 0;
+                    winSound.play().catch(e => console.log('Rounak break sound failed:', e));
+                    birdFlashGreen(); // Visual feedback for successful break
+                    
+                    return false; // Collision ignored
+                }
+
+                // Standard pipe hit (no ability used or character is Mainak)
+                handleGameOver();
+                return true; 
             }
 
             return false;
         }
         
         function handleJump(e) {
-            // Check if the click was on the UI elements. If so, ignore.
-            if (e && (e.target.closest('#settings-panel') || e.target.closest('#rules-modal'))) {
+            // Block jump if click is on the carousel itself (only before game starts)
+            if (e && e.target.closest('#pregame-carousel') && !gameStarted) {
                 return;
-            }
-
-            if (!rulesAccepted) return; 
-
-            // <<< FIX: Check for the blocking flag
-            if (isBlockingFirstJump) {
-                isBlockingFirstJump = false; // Consume the flag
-                return; // Do nothing, this was the click on the "Got It" button
             }
 
             if (gameOver) {
-                initializeGame();
+                // IMPORTANT: If game is over, we ignore general clicks/taps. 
+                // Only the dedicated button listeners can restart the game.
                 return;
             }
-            if (!gameStarted) {
-                gameStarted = true;
-                startMessage.classList.add('hidden');
-                
-                warmupSound.pause(); 
 
-                flySound.loop = true;
-                flySound.currentTime = 0;
-                flySound.play().catch(err => console.log('Flying audio failed to start loop:', err));
+            if (!gameStarted) {
+                // Start game logic (only if the carousel is hidden OR the explicit button is pressed)
+                if (carousel.classList.contains('hidden') || e.target.id === 'start-game-btn') {
+                    startGame(); 
+                    birdVelocity = dynamicJumpForce;
+                }
+                return;
             }
             
-            birdVelocity = jumpForce;
+            // If game is running, jump
+            birdVelocity = dynamicJumpForce;
+
+            // Play sound for jump
+            flySound.currentTime = 0;
+            flySound.play().catch(err => console.log('Jump audio failed:', err));
         }
         
         function handleGameOver() {
@@ -815,6 +1067,7 @@
             hitSound.play().catch(e => console.log('Game Over audio failed:', e));
             
             bird.style.boxShadow = '0 0 15px 8px rgba(255, 0, 0, 1)'; 
+            bird.style.opacity = 1.0; // Ensure visible when game over
             
             gameOverMessage.classList.remove('hidden'); 
         }
@@ -829,50 +1082,66 @@
             winSound.play().catch(e => console.log('Win audio failed:', e));
 
             bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 1)'; 
+            bird.style.opacity = 1.0; // Ensure visible when win
 
             winPopup.classList.remove('hidden');
         }
 
-        // --- Custom Dropdown Event Listeners ---
-        // These listeners stop the click from bubbling up to the document,
-        // which would otherwise trigger a jump.
-        dropdownHeader.addEventListener('click', (e) => {
-            if (gameStarted || !rulesAccepted) return; 
-            e.stopPropagation(); // Stop click from bubbling to document
+        // --- Event Listeners Setup ---
 
-            const isOpen = dropdownOptions.classList.toggle('open');
-            if (isOpen) {
-                dropdownArrow.style.transform = 'rotate(180deg)';
-            } else {
-                dropdownArrow.style.transform = 'rotate(0deg)';
+        // Carousel Navigation
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                showSlide(currentSlide - 1, 'prev');
             }
         });
 
-        optionButtons.forEach(button => {
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < SLIDE_COUNT - 1) {
+                showSlide(currentSlide + 1, 'next');
+            }
+        });
+
+        startGameBtn.addEventListener('click', startGame);
+        
+        // NEW: Dedicated restart listeners
+        restartBtn.addEventListener('click', initializeGame);
+        playAgainBtn.addEventListener('click', initializeGame);
+
+        // Character Selection on Icon Click 
+        slideIcons.forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                const charName = e.currentTarget.dataset.character;
+                if (charName) {
+                    applyCharacterAbilities(charName);
+                }
+            });
+        });
+        
+        // Character Selection on Button Click (Explicit Selection)
+        selectCharButtons.forEach(button => {
             button.addEventListener('click', (e) => {
-                if (gameStarted || !rulesAccepted) return;
-                e.stopPropagation(); // Stop click from bubbling
-                changeBird(e.currentTarget.dataset.bird);
+                const charName = e.currentTarget.dataset.character;
+                if (charName) {
+                    applyCharacterAbilities(charName);
+                }
             });
         });
 
-        // --- Rules Modal Listener ---
-        rulesAcceptButton.addEventListener('click', acceptRules);
-
-        // --- Game Event Listeners (Listen on document) ---
+        // Game Event Listeners (Listen on document for jump)
         document.addEventListener('click', handleJump);
         
         document.addEventListener('touchstart', (e) => {
-            // Check if the touch was on the UI elements. If so, ignore.
-            if (e.target.closest('#settings-panel') || e.target.closest('#rules-modal')) {
-                return;
+            // Check if the target is within a popup/control area, in which case we let the dedicated listeners handle it.
+            // If the game is not over and the target is not a control element, process the jump.
+            if (!e.target.closest('#pregame-carousel') && !e.target.closest('#game-over') && !e.target.closest('#win-popup') && !gameOver) {
+                 e.preventDefault(); 
+                 handleJump(e);
             }
-            e.preventDefault(); 
-            handleJump(e);
         }, { passive: false });
         
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && !gameOver) {
                 handleJump(e);
             }
         });
@@ -884,5 +1153,3 @@
 </body>
 </html>
 
-
- 
