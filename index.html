@@ -279,11 +279,35 @@
             z-index: 10;
         }
 
+        /* --- Cooldown Display Styles (NEW) --- */
+        #cooldown-display {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 15px;
+            background-color: rgba(0, 0, 0, 0.75);
+            color: #ffcc00; /* Yellow/Gold for ability */
+            border-radius: 12px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            z-index: 15;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+            min-width: 150px;
+            text-align: center;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+
+        #cooldown-display.ready {
+            color: #00ff66; /* Green for ready state */
+            background-color: rgba(0, 50, 20, 0.85);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
     </style>
 </head>
 <body class="bg-gray-800 flex flex-col items-center justify-center h-screen w-screen overflow-hidden">
 
-    <!-- Game Container -->
     <div id="game-container">
         
         <div id="health-bar-container">
@@ -292,12 +316,14 @@
         
         <div id="bird"></div>
         <div id="score">0</div>
+
+        <div id="cooldown-display" class="hidden">
+            Skill Ready
+        </div>
         
-        <!-- Pre-Game Carousel Modal -->
         <div id="pregame-carousel" class="message-popup text-base">
             <div id="carousel-slides" class="relative">
 
-                <!-- Slide 1: Rules -->
                 <div class="carousel-slide active" data-index="0" data-character="">
                     <h2 class="font-bold text-3xl mb-4 text-gray-800 border-b pb-2 w-full max-w-xs">Game Rules</h2>
                     <ul class="rules-list text-gray-700">
@@ -310,7 +336,6 @@
                     </ul>
                 </div>
                 
-                <!-- Slide 2: Dildo -->
                 <div class="carousel-slide" data-index="1" data-character="Dildo">
                     <h2 class="font-bold text-3xl mb-6 text-gray-800">🐤 Dildo - The Tank</h2>
                     <div class="slide-icon" data-character="Dildo" style="background-image: url('dildo.png');"></div>
@@ -320,21 +345,19 @@
                     </button>
                 </div>
 
-                <!-- Slide 3: Mainak -->
                 <div class="carousel-slide" data-index="2" data-character="Mainak">
                     <h2 class="font-bold text-3xl mb-6 text-gray-800">🕶️ Mainak - The Ghost</h2>
                     <div class="slide-icon" data-character="Mainak" style="background-image: url('mainak.png');"></div>
-                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: **1.25x faster horizontal speed** and invisible for 1.75s every 10s. Default flight physics.</p>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: 10% damage from DC, and invisible for 0.5s every 10s. Health birds hurt (5%)!</p>
                     <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Mainak">
                         Select Mainak
                     </button>
                 </div>
                 
-                <!-- Slide 4: Rounak -->
                 <div class="carousel-slide" data-index="3" data-character="Rounak">
                     <h2 class="font-bold text-3xl mb-6 text-gray-800">💥 Rounak - The Breaker</h2>
                     <div class="slide-icon" data-character="Rounak" style="background-image: url('rounak.png');"></div>
-                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Breaks the first pipe it hits; every 10s turns 10% visible for 1s.</p>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Higher downforce, breaks a pipe every 60s. Invisible for 1 s every 10s.</p>
                     <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Rounak">
                         Select Rounak
                     </button>
@@ -388,6 +411,7 @@
         const gameOverMessage = document.getElementById('game-over');
         const winPopup = document.getElementById('win-popup');
         const healthBar = document.getElementById('health-bar'); 
+        const cooldownDisplay = document.getElementById('cooldown-display'); // Get the new cooldown element
         
         // Carousel Elements
         const carousel = document.getElementById('pregame-carousel');
@@ -422,11 +446,11 @@
         const badBirdSize = 55;             
         const badBirdRadius = badBirdSize / 2;
         const badBirdSpawnInterval = 180;  
-        const damageAmount = 20;            
+        const BASE_DAMAGE_AMOUNT = 20; 
         const healthBirdSize = 40;
         const healthBirdRadius = healthBirdSize / 2;
         const healthBirdSpawnInterval = 300; 
-        const healAmount = 5;
+        const BASE_HEAL_AMOUNT = 5; 
         const winScore = 69; 
 
         // Base Physics Constants
@@ -435,7 +459,7 @@
         const BASE_PIPE_SPEED = 1.8;           
         const BASE_BAD_BIRD_SPEED = 2.8;        
         
-        // --- Character Configuration ---
+        // --- Character Configuration (UPDATED) ---
         const CHARACTERS = {
             Dildo: { 
                 name: 'Dildo', 
@@ -444,17 +468,22 @@
                 slipperyControl: true,
                 initialInvulnerable: true, 
                 speedMultiplier: 1.0,
+                dcDamageMultiplier: 1.0, 
+                healthBirdEffect: 'heal',
                 visibilityInterval: 0, 
             },
             Mainak: {
                 name: 'Mainak',
                 file: 'mainak.png',
                 icon: '🕶️',
-                slipperyControl: false,
+                slipperyControl: true,
                 initialInvulnerable: false,
-                speedMultiplier: 1.25, // 1.25x horizontal speed
+                speedMultiplier: 1.0, 
+                dcDamageMultiplier: 0.5, // Takes 50% of the base 20% damage (i.e., 10% damage)
+                healthBirdEffect: 'damage', // Health bird causes damage
+                healthBirdDamage: 5, // 5% damage from health bird
                 visibilityInterval: 600, 
-                visibilityDuration: 105, // 1.75 seconds * 60 FPS
+                visibilityDuration: 45, // 0.75 seconds * 60 FPS
                 visibilityOpacity: 0.05,
                 autoFlapOffset: 0.0 
             },
@@ -463,11 +492,14 @@
                 file: 'rounak.png',
                 icon: '💥',
                 slipperyControl: false,
-                initialInvulnerable: true,
+                initialInvulnerable: false, 
                 speedMultiplier: 0.95,
-                visibilityInterval: 600,
-                visibilityDuration: 60,
+                dcDamageMultiplier: 1.0, 
+                healthBirdEffect: 'heal',
+                visibilityInterval: 600, // 10 seconds
+                visibilityDuration: 60, // 0.9 seconds * 60 FPS
                 visibilityOpacity: 0.10,
+                pipeBreakCooldown: 3600, // 10 seconds (600 frames) cooldown
                 autoFlapOffset: 0.0 
             }
         };
@@ -485,8 +517,8 @@
 
         // Character Ability States
         let dilloBounceUsed = true;
-        let rounakBreakUsed = true;
-        
+        let rounakBreakCooldownFrames = 0; 
+
         // Carousel State
         let currentSlide = 0;
         const SLIDE_COUNT = slides.length; 
@@ -519,37 +551,34 @@
             // 1. Visual/Cosmetic
             bird.style.backgroundImage = `url('${char.file}')`;
             selectedCharName.textContent = char.name;
-            updateCharacterSelectionVisuals(characterName); // Update visuals
+            updateCharacterSelectionVisuals(characterName); 
 
             // 2. Dynamic Speed
             dynamicPipeSpeed = BASE_PIPE_SPEED * char.speedMultiplier;
             dynamicBadBirdSpeed = BASE_BAD_BIRD_SPEED * char.speedMultiplier;
             
             // 3. Dynamic Physics Adjustments (Gravity and Jump Force)
-            // Start with base values for all characters
             dynamicGravity = BASE_GRAVITY;
             dynamicJumpForce = BASE_JUMP_FORCE;
 
-            // Custom physics for Dildo (Lighter)
             if (characterName === 'Dildo') { 
                 dynamicGravity = BASE_GRAVITY * 0.75; 
                 dynamicJumpForce = BASE_JUMP_FORCE * 1.0; 
             } 
-            // Custom physics for Rounak (Heavier/Slippery)
+            // Rounak: Less Downforce
             else if (characterName === 'Rounak') {
-                // Rounak uses the heavier 1.4x gravity
-                dynamicGravity = BASE_GRAVITY * 1.4; 
+                dynamicGravity = BASE_GRAVITY * 1.35; // Reduced gravity multiplier for less downforce
                 dynamicJumpForce = BASE_JUMP_FORCE * 0.9;  
             }
-            // Mainak uses base physics, as requested.
+            // Mainak uses base physics.
 
 
             // 4. Invulnerability State (Reset ability usage when character is selected)
             dilloBounceUsed = !(characterName === 'Dildo' && char.initialInvulnerable); 
-            rounakBreakUsed = !(characterName === 'Rounak' && char.initialInvulnerable);
+            rounakBreakCooldownFrames = 0; 
         }
 
-        // --- Carousel Logic ---
+        // --- Carousel Logic (No Changes) ---
         
         function updateCarouselControls() {
             // Update Previous Button state
@@ -610,7 +639,7 @@
             health = 100; 
             updateHealthBar(health); 
 
-            // Initialize character state based on default/last selection (Important for visual state)
+            // Initialize character state based on default/last selection
             applyCharacterAbilities(currentCharacter); 
 
             flySound.pause(); 
@@ -621,11 +650,13 @@
             bird.style.top = `${birdY}px`;
             bird.style.transform = 'rotate(0deg)';
             bird.style.boxShadow = 'none'; 
-            bird.style.opacity = 1.0; // Ensure visible
+            bird.style.opacity = 1.0; 
             scoreDisplay.innerText = score;
             gameOverMessage.classList.add('hidden'); 
             winPopup.classList.add('hidden');
             carousel.classList.remove('hidden'); 
+            
+            cooldownDisplay.classList.add('hidden'); // Hide the cooldown display at initialization
             
             document.querySelectorAll('.pipe').forEach(pipe => pipe.remove());
             document.querySelectorAll('.bad-bird').forEach(b => b.remove()); 
@@ -678,6 +709,27 @@
 
                 // --- 2. Obstacle Logic ---
                 frameCount++;
+                
+                // Rounak Cooldown Logic and Display Update
+                if (currentCharacter === 'Rounak') {
+                    cooldownDisplay.classList.remove('hidden');
+                    
+                    if (rounakBreakCooldownFrames > 0) {
+                        rounakBreakCooldownFrames--;
+                        
+                        // Calculate remaining seconds
+                        const remainingSeconds = (rounakBreakCooldownFrames / 60).toFixed(1);
+                        
+                        cooldownDisplay.innerHTML = `Break CD: ${remainingSeconds}s`;
+                        cooldownDisplay.classList.remove('ready');
+                    } else {
+                        cooldownDisplay.innerHTML = `Skill Ready! 💥`;
+                        cooldownDisplay.classList.add('ready');
+                    }
+                } else {
+                    cooldownDisplay.classList.add('hidden');
+                }
+
 
                 // Visibility Logic (Mainak/Rounak)
                 if (char.visibilityInterval > 0) {
@@ -685,7 +737,7 @@
                     if (frameCount > 600) {
                         const frameInInterval = frameCount % char.visibilityInterval;
                         
-                        // The effect happens for 1.75 seconds (105 frames) at the beginning of the cycle for Mainak
+                        // The effect happens for the defined duration at the beginning of the cycle
                         if (frameInInterval > 0 && frameInInterval < char.visibilityDuration) {
                             bird.style.opacity = char.visibilityOpacity;
                         } else {
@@ -751,7 +803,9 @@
                     
                     if (checkObjectCollision(badBird, badBirdRadius)) {
                         
-                        health -= damageAmount; 
+                        // Mainak: Less damage from DC Lord (50% of BASE_DAMAGE_AMOUNT)
+                        const damageToInflict = BASE_DAMAGE_AMOUNT * char.dcDamageMultiplier; 
+                        health -= damageToInflict; 
                         updateHealthBar(health);
                         
                         // Sound and Visual Feedback
@@ -784,13 +838,27 @@
 
                     if (checkObjectCollision(healthBird, healthBirdRadius)) {
                         
-                        health = Math.min(100, health + healAmount); 
+                        // Handle Health Bird Effect based on character
+                        if (char.healthBirdEffect === 'damage') {
+                            // Mainak takes damage from health bird
+                            health -= char.healthBirdDamage;
+                            birdFlashRed(); // Visual feedback for taking damage
+                            hitSound.currentTime = 0; // Use hit sound for negative effect
+                            hitSound.play().catch(e => console.log('Health bird damage audio failed:', e));
+                            if (health <= 0) {
+                                handleGameOver();
+                                return;
+                            }
+                        } else {
+                            // Default heal
+                            health = Math.min(100, health + BASE_HEAL_AMOUNT); 
+                            birdFlashGreen(); // Visual feedback for successful heal
+                            winSound.currentTime = 0; // Use win sound for positive effect
+                            winSound.play().catch(e => console.log('Heal audio failed:', e));
+                        }
+                        
                         updateHealthBar(health);
                         
-                        // Sound and Visual Feedback
-                        winSound.currentTime = 0;
-                        winSound.play().catch(e => console.log('Heal audio failed:', e));
-                        birdFlashGreen();
 
                         gameContainer.removeChild(healthBird.el);
                         healthBirds.splice(i, 1);
@@ -807,7 +875,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- Utility Functions ---
+        // --- Utility Functions (Mostly Unchanged) ---
 
         function birdFlashRed() {
             bird.style.boxShadow = '0 0 12px 6px rgba(255, 0, 0, 0.7)';
@@ -996,9 +1064,10 @@
                     return false; // Collision ignored
                 }
                 
-                // Rounak: Break the first pipe
-                if (currentCharacter === 'Rounak' && !rounakBreakUsed) {
-                    rounakBreakUsed = true;
+                // Rounak: Break the first pipe (with cooldown)
+                if (currentCharacter === 'Rounak' && rounakBreakCooldownFrames === 0) {
+                    rounakBreakCooldownFrames = CHARACTERS.Rounak.pipeBreakCooldown; // Start cooldown
+                    
                     // Visually "break" the pipe by removing it
                     pipe.top.style.opacity = '0';
                     pipe.bottom.style.opacity = '0';
@@ -1016,11 +1085,15 @@
                     winSound.currentTime = 0;
                     winSound.play().catch(e => console.log('Rounak break sound failed:', e));
                     birdFlashGreen(); // Visual feedback for successful break
+
+                    // Update the display immediately after using the ability
+                    cooldownDisplay.innerHTML = `Break CD: ${(rounakBreakCooldownFrames / 60).toFixed(1)}s`;
+                    cooldownDisplay.classList.remove('ready');
                     
                     return false; // Collision ignored
                 }
 
-                // Standard pipe hit (no ability used or character is Mainak)
+                // Standard pipe hit (no ability used or ability on cooldown)
                 handleGameOver();
                 return true; 
             }
@@ -1067,7 +1140,8 @@
             hitSound.play().catch(e => console.log('Game Over audio failed:', e));
             
             bird.style.boxShadow = '0 0 15px 8px rgba(255, 0, 0, 1)'; 
-            bird.style.opacity = 1.0; // Ensure visible when game over
+            bird.style.opacity = 1.0; 
+            cooldownDisplay.classList.add('hidden'); // Hide display on game over
             
             gameOverMessage.classList.remove('hidden'); 
         }
@@ -1082,12 +1156,13 @@
             winSound.play().catch(e => console.log('Win audio failed:', e));
 
             bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 1)'; 
-            bird.style.opacity = 1.0; // Ensure visible when win
+            bird.style.opacity = 1.0; 
+            cooldownDisplay.classList.add('hidden'); // Hide display on win
 
             winPopup.classList.remove('hidden');
         }
 
-        // --- Event Listeners Setup ---
+        // --- Event Listeners Setup (No Changes) ---
 
         // Carousel Navigation
         prevBtn.addEventListener('click', () => {
@@ -1104,7 +1179,7 @@
 
         startGameBtn.addEventListener('click', startGame);
         
-        // NEW: Dedicated restart listeners
+        // Dedicated restart listeners
         restartBtn.addEventListener('click', initializeGame);
         playAgainBtn.addEventListener('click', initializeGame);
 
@@ -1152,4 +1227,3 @@
     </script>
 </body>
 </html>
-
