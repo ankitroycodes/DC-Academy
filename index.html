@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flappy Bird (Tuned Difficulty)</title>
+    <title>Flappy Bird (Dihh-See)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -334,7 +334,7 @@
                 <div class="carousel-slide" data-index="3" data-character="Rounak">
                     <h2 class="font-bold text-3xl mb-6 text-gray-800">💥 Rounak - The Breaker</h2>
                     <div class="slide-icon" data-character="Rounak" style="background-image: url('rounak.png');"></div>
-                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Breaks the first pipe it hits; every 10s turns 10% visible for 1s. gets more downforce than others</p>
+                    <p class="text-xl px-2 mb-3 font-semibold text-gray-700 max-w-xs">Ability: Breaks the first pipe it hits; every 10s turns 10% visible for 1s.</p>
                     <button class="select-char-btn mt-auto bg-yellow-500 text-white font-bold py-2 px-8 rounded-full shadow-lg hover:bg-yellow-600 transition duration-150" data-character="Rounak">
                         Select Rounak
                     </button>
@@ -417,6 +417,8 @@
         const birdSize = 40;
         const birdRadius = birdSize / 2; 
         const pipeWidth = 65;
+        const pipeGap = 180;             
+        const pipeSpawnInterval = 120;   
         const badBirdSize = 55;             
         const badBirdRadius = badBirdSize / 2;
         const badBirdSpawnInterval = 180;  
@@ -481,10 +483,6 @@
         let dynamicPipeSpeed = BASE_PIPE_SPEED;
         let dynamicBadBirdSpeed = BASE_BAD_BIRD_SPEED;
 
-        // Dynamic Difficulty variables
-        let currentPipeGap = 220; // Start at the easiest (was 280)
-        let currentPipeSpawnInterval = 150; // Slower spawn for easier gap
-
         // Character Ability States
         let dilloBounceUsed = true;
         let rounakBreakUsed = true;
@@ -496,37 +494,57 @@
 
         // --- Character and Physics Logic ---
         
+        /**
+         * Updates the visual selection state of the character icons.
+         * @param {string} charName - The name of the currently selected character.
+         */
         function updateCharacterSelectionVisuals(charName) {
+            // Remove 'selected' from all icons
             document.querySelectorAll('.slide-icon').forEach(i => i.classList.remove('selected'));
+            // Find and add 'selected' to the correct icon element
             const selectedIcon = document.querySelector(`.slide-icon[data-character="${charName}"]`);
             if (selectedIcon) {
                 selectedIcon.classList.add('selected');
             }
         }
 
+        /**
+         * Applies the selected character's unique abilities and physics modifications.
+         * @param {string} characterName - The name of the selected character.
+         */
         function applyCharacterAbilities(characterName) {
             const char = CHARACTERS[characterName];
             currentCharacter = characterName;
             
+            // 1. Visual/Cosmetic
             bird.style.backgroundImage = `url('${char.file}')`;
             selectedCharName.textContent = char.name;
-            updateCharacterSelectionVisuals(characterName); 
+            updateCharacterSelectionVisuals(characterName); // Update visuals
 
+            // 2. Dynamic Speed
             dynamicPipeSpeed = BASE_PIPE_SPEED * char.speedMultiplier;
             dynamicBadBirdSpeed = BASE_BAD_BIRD_SPEED * char.speedMultiplier;
             
+            // 3. Dynamic Physics Adjustments (Gravity and Jump Force)
+            // Start with base values for all characters
             dynamicGravity = BASE_GRAVITY;
             dynamicJumpForce = BASE_JUMP_FORCE;
 
+            // Custom physics for Dildo (Lighter)
             if (characterName === 'Dildo') { 
                 dynamicGravity = BASE_GRAVITY * 0.75; 
                 dynamicJumpForce = BASE_JUMP_FORCE * 1.0; 
             } 
+            // Custom physics for Rounak (Heavier/Slippery)
             else if (characterName === 'Rounak') {
+                // Rounak uses the heavier 1.4x gravity
                 dynamicGravity = BASE_GRAVITY * 1.4; 
                 dynamicJumpForce = BASE_JUMP_FORCE * 0.9;  
             }
+            // Mainak uses base physics, as requested.
 
+
+            // 4. Invulnerability State (Reset ability usage when character is selected)
             dilloBounceUsed = !(characterName === 'Dildo' && char.initialInvulnerable); 
             rounakBreakUsed = !(characterName === 'Rounak' && char.initialInvulnerable);
         }
@@ -534,6 +552,7 @@
         // --- Carousel Logic ---
         
         function updateCarouselControls() {
+            // Update Previous Button state
             if (currentSlide === 0) {
                 prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 prevBtn.disabled = true;
@@ -542,6 +561,7 @@
                 prevBtn.disabled = false;
             }
 
+            // Update Next/Start Button state
             if (currentSlide === SLIDE_COUNT - 1) {
                 nextBtn.classList.add('hidden');
                 startGameBtn.classList.remove('hidden');
@@ -555,6 +575,7 @@
             slides.forEach((slide, i) => {
                 slide.classList.remove('active');
                 
+                // Adjust transition for slide direction
                 if (direction === 'next') {
                     slide.style.transform = `translateX(${i < index ? '-100%' : '100%'})`;
                 } else if (direction === 'prev') {
@@ -589,16 +610,18 @@
             health = 100; 
             updateHealthBar(health); 
 
+            // Initialize character state based on default/last selection (Important for visual state)
             applyCharacterAbilities(currentCharacter); 
 
             flySound.pause(); 
             warmupSound.currentTime = 0; 
             warmupSound.play().catch(e => console.log('Warmup audio failed to auto-play:', e)); 
 
+            // Reset UI
             bird.style.top = `${birdY}px`;
             bird.style.transform = 'rotate(0deg)';
             bird.style.boxShadow = 'none'; 
-            bird.style.opacity = 1.0; 
+            bird.style.opacity = 1.0; // Ensure visible
             scoreDisplay.innerText = score;
             gameOverMessage.classList.add('hidden'); 
             winPopup.classList.add('hidden');
@@ -609,6 +632,7 @@
             document.querySelectorAll('.health-bird').forEach(h => h.remove()); 
             document.querySelectorAll('.blood-drop').forEach(d => d.remove()); 
 
+            // Start at Rules slide
             showSlide(0, 'init'); 
 
             requestAnimationFrame(gameLoop);
@@ -624,29 +648,6 @@
             flySound.play().catch(err => console.log('Flying audio failed to start loop:', err));
         }
 
-        /**
-         * UPDATED: Tuned difficulty values.
-         */
-        function updateDifficulty() {
-            if (score < 30) {
-                // Level 0: 220px gap
-                currentPipeGap = 220;
-                currentPipeSpawnInterval = 150; // Slower spawn for this easier gap
-            } else if (score >= 30 && score < 40) {
-                // Level 1: 205px gap (was 160)
-                currentPipeGap = 205;
-                currentPipeSpawnInterval = 110;
-            } else if (score >= 40 && score < 59) {
-                // Level 2: 190px gap (was 200)
-                currentPipeGap = 190;
-                currentPipeSpawnInterval = 130;
-            } else { // Score is 59-69
-                // Level 3: 160px gap (was 170)
-                currentPipeGap = 160;
-                currentPipeSpawnInterval = 115;
-            }
-        }
-
 
         function gameLoop() {
             if (gameOver) return; 
@@ -656,6 +657,7 @@
                 // --- 1. Physics (Bird) ---
                 const char = CHARACTERS[currentCharacter];
 
+                // Apply auto flap/hover for characters that have it
                 if (char.autoFlapOffset && currentCharacter === 'Mainak') {
                     birdVelocity -= char.autoFlapOffset;
                 }
@@ -663,6 +665,7 @@
                 birdVelocity += dynamicGravity; 
                 birdY += birdVelocity;
 
+                // Ceiling/Ground collision check
                 if (birdY < 0 || birdY + birdSize > gameContainer.clientHeight) {
                     birdY = Math.max(0, Math.min(birdY, gameContainer.clientHeight - birdSize));
                     handleGameOver(); 
@@ -676,25 +679,28 @@
                 // --- 2. Obstacle Logic ---
                 frameCount++;
 
-                updateDifficulty();
-
+                // Visibility Logic (Mainak/Rounak)
                 if (char.visibilityInterval > 0) {
+                    // Check if 10 seconds (600 frames) have passed since the game started
                     if (frameCount > 600) {
                         const frameInInterval = frameCount % char.visibilityInterval;
                         
+                        // The effect happens for 1.75 seconds (105 frames) at the beginning of the cycle for Mainak
                         if (frameInInterval > 0 && frameInInterval < char.visibilityDuration) {
                             bird.style.opacity = char.visibilityOpacity;
                         } else {
                             bird.style.opacity = 1.0;
                         }
                     } else {
+                        // Ensure bird is fully visible for the first 10 seconds
                         bird.style.opacity = 1.0;
                     }
                 }
 
 
+                // Condition to stop spawning pipes and enemies once the win score is hit
                 if (score < winScore) {
-                    if (frameCount % currentPipeSpawnInterval === 0) {
+                    if (frameCount % pipeSpawnInterval === 0) {
                         createPipePair();
                     }
                     
@@ -724,7 +730,9 @@
                     }
 
                     if (checkCollision(pipe)) {
+                        // Collision handled internally (break/bounce) or returns true for game over
                         if (gameOver) return;
+                        // If pipe was broken/bounced, it's removed from array in checkCollision, so continue
                         if (pipes.indexOf(pipe) === -1) continue; 
                     }
 
@@ -746,6 +754,7 @@
                         health -= damageAmount; 
                         updateHealthBar(health);
                         
+                        // Sound and Visual Feedback
                         hitSound.currentTime = 0;
                         hitSound.play().catch(e => console.log('Hit audio failed:', e));
                         dropBlood(bird.offsetLeft, birdY);
@@ -778,6 +787,7 @@
                         health = Math.min(100, health + healAmount); 
                         updateHealthBar(health);
                         
+                        // Sound and Visual Feedback
                         winSound.currentTime = 0;
                         winSound.play().catch(e => console.log('Heal audio failed:', e));
                         birdFlashGreen();
@@ -873,8 +883,7 @@
         function createPipePair() {
             const currentHeight = gameContainer.clientHeight;
             const currentWidth = gameContainer.clientWidth;
-            // USE DYNAMIC variable for gap
-            const gapTop = Math.random() * (currentHeight - currentPipeGap - 100) + 50;
+            const gapTop = Math.random() * (currentHeight - pipeGap - 100) + 50;
             
             const topPipe = document.createElement('div');
             topPipe.className = 'pipe pipe-top'; 
@@ -883,8 +892,7 @@
             
             const bottomPipe = document.createElement('div');
             bottomPipe.className = 'pipe pipe-bottom';
-            // USE DYNAMIC variable for height
-            bottomPipe.style.height = `${currentHeight - gapTop - currentPipeGap}px`;
+            bottomPipe.style.height = `${currentHeight - gapTop - pipeGap}px`;
             bottomPipe.style.left = `${currentWidth}px`;
             
             gameContainer.appendChild(topPipe);
@@ -957,6 +965,11 @@
             return distance < (birdRadius + objectRadius);
         }
 
+        /**
+         * Checks for pipe collision and applies character-specific pipe abilities.
+         * @param {Object} pipe - The pipe object.
+         * @returns {boolean} True if actual collision occurs (game over), false otherwise.
+         */
         function checkCollision(pipe) {
             const birdCenterX = bird.offsetLeft + birdRadius;
             const birdCenterY = birdY + birdRadius;
@@ -973,17 +986,20 @@
             }
 
             if (collisionDetected) {
+                // Dildo: Bounce on first hit (only for pipes)
                 if (currentCharacter === 'Dildo' && !dilloBounceUsed) { 
                     dilloBounceUsed = true;
-                    birdVelocity = dynamicJumpForce * 1.5; 
-                    birdFlashGreen(); 
+                    birdVelocity = dynamicJumpForce * 1.5; // Large upward bounce
+                    birdFlashGreen(); // Visual feedback for successful bounce
                     hitSound.currentTime = 0;
                     hitSound.play().catch(e => console.log('Dildo bounce sound failed:', e));
-                    return false; 
+                    return false; // Collision ignored
                 }
                 
+                // Rounak: Break the first pipe
                 if (currentCharacter === 'Rounak' && !rounakBreakUsed) {
                     rounakBreakUsed = true;
+                    // Visually "break" the pipe by removing it
                     pipe.top.style.opacity = '0';
                     pipe.bottom.style.opacity = '0';
                     setTimeout(() => {
@@ -991,6 +1007,7 @@
                         pipe.bottom.remove();
                     }, 300);
                     
+                    // Remove the pipe object from the pipes array
                     const index = pipes.indexOf(pipe);
                     if (index > -1) {
                         pipes.splice(index, 1);
@@ -998,11 +1015,12 @@
                     
                     winSound.currentTime = 0;
                     winSound.play().catch(e => console.log('Rounak break sound failed:', e));
-                    birdFlashGreen(); 
+                    birdFlashGreen(); // Visual feedback for successful break
                     
-                    return false; 
+                    return false; // Collision ignored
                 }
 
+                // Standard pipe hit (no ability used or character is Mainak)
                 handleGameOver();
                 return true; 
             }
@@ -1010,34 +1028,33 @@
             return false;
         }
         
-        /**
-         * Cleaned up handleJump function.
-         */
         function handleJump(e) {
-            // Check 1: Handle the 'Start Game' button click explicitly first.
-            if (e && e.target.id === 'start-game-btn' && !gameStarted) {
-                startGame(); 
-                birdVelocity = dynamicJumpForce; // Give the first flap
-                return;
-            }
-
-            // Check 2: Block any other clicks on the carousel before game starts.
+            // Block jump if click is on the carousel itself (only before game starts)
             if (e && e.target.closest('#pregame-carousel') && !gameStarted) {
                 return;
             }
 
-            // Check 3: If game is over, only dedicated buttons work.
             if (gameOver) {
+                // IMPORTANT: If game is over, we ignore general clicks/taps. 
+                // Only the dedicated button listeners can restart the game.
                 return;
             }
 
-            // Check 4: If game hasn't started, and it wasn't the start button, do nothing.
             if (!gameStarted) {
+                // Start game logic (only if the carousel is hidden OR the explicit button is pressed)
+                if (carousel.classList.contains('hidden') || e.target.id === 'start-game-btn') {
+                    startGame(); 
+                    birdVelocity = dynamicJumpForce;
+                }
                 return;
             }
             
-            // Check 5: If we get here, game is running and it's a jump.
+            // If game is running, jump
             birdVelocity = dynamicJumpForce;
+
+            // Play sound for jump
+            flySound.currentTime = 0;
+            flySound.play().catch(err => console.log('Jump audio failed:', err));
         }
         
         function handleGameOver() {
@@ -1050,7 +1067,7 @@
             hitSound.play().catch(e => console.log('Game Over audio failed:', e));
             
             bird.style.boxShadow = '0 0 15px 8px rgba(255, 0, 0, 1)'; 
-            bird.style.opacity = 1.0; 
+            bird.style.opacity = 1.0; // Ensure visible when game over
             
             gameOverMessage.classList.remove('hidden'); 
         }
@@ -1065,13 +1082,14 @@
             winSound.play().catch(e => console.log('Win audio failed:', e));
 
             bird.style.boxShadow = '0 0 12px 6px rgba(0, 255, 0, 1)'; 
-            bird.style.opacity = 1.0; 
+            bird.style.opacity = 1.0; // Ensure visible when win
 
             winPopup.classList.remove('hidden');
         }
 
         // --- Event Listeners Setup ---
 
+        // Carousel Navigation
         prevBtn.addEventListener('click', () => {
             if (currentSlide > 0) {
                 showSlide(currentSlide - 1, 'prev');
@@ -1084,14 +1102,13 @@
             }
         });
 
-        // The 'startGameBtn' listener now correctly calls the modified handleJump
-        startGameBtn.addEventListener('click', (e) => {
-            handleJump(e);
-        });
+        startGameBtn.addEventListener('click', startGame);
         
+        // NEW: Dedicated restart listeners
         restartBtn.addEventListener('click', initializeGame);
         playAgainBtn.addEventListener('click', initializeGame);
 
+        // Character Selection on Icon Click 
         slideIcons.forEach(icon => {
             icon.addEventListener('click', (e) => {
                 const charName = e.currentTarget.dataset.character;
@@ -1101,6 +1118,7 @@
             });
         });
         
+        // Character Selection on Button Click (Explicit Selection)
         selectCharButtons.forEach(button => {
             button.addEventListener('click', (e) => {
                 const charName = e.currentTarget.dataset.character;
@@ -1110,17 +1128,20 @@
             });
         });
 
+        // Game Event Listeners (Listen on document for jump)
         document.addEventListener('click', handleJump);
         
         document.addEventListener('touchstart', (e) => {
-            if (!e.target.closest('#pregame-carousel') && !e.target.closest('#game-over') && !e.target.closest('#win-popup')) {
+            // Check if the target is within a popup/control area, in which case we let the dedicated listeners handle it.
+            // If the game is not over and the target is not a control element, process the jump.
+            if (!e.target.closest('#pregame-carousel') && !e.target.closest('#game-over') && !e.target.closest('#win-popup') && !gameOver) {
                  e.preventDefault(); 
                  handleJump(e);
             }
         }, { passive: false });
         
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && !gameOver) {
                 handleJump(e);
             }
         });
@@ -1131,5 +1152,4 @@
     </script>
 </body>
 </html>
-
 
