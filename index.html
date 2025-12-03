@@ -431,7 +431,7 @@
 
 
         // --- Audio Setup ---
-        const flySound = new Audio('while-flying.mp3'); 
+        const gameMusic = new Audio('while-flying.mp3'); // Renamed from flySound for clarity (This is the BGM)
         const hitSound = new Audio('after-hitting-dying.mp3');
         const winSound = new Audio('after-completing.mp3');
         const warmupSound = new Audio('warmup.mp3'); 
@@ -567,8 +567,8 @@
             } 
             // Rounak: Less Downforce
             else if (characterName === 'Rounak') {
-                dynamicGravity = BASE_GRAVITY * 1.35; // Reduced gravity multiplier for less downforce
-                dynamicJumpForce = BASE_JUMP_FORCE * 0.9;  
+                dynamicGravity = BASE_GRAVITY * 1.75; // Reduced gravity multiplier for less downforce
+                dynamicJumpForce = BASE_JUMP_FORCE * 1.25;  
             }
             // Mainak uses base physics.
 
@@ -642,7 +642,7 @@
             // Initialize character state based on default/last selection
             applyCharacterAbilities(currentCharacter); 
 
-            flySound.pause(); 
+            gameMusic.pause(); // Pause game music
             warmupSound.currentTime = 0; 
             warmupSound.play().catch(e => console.log('Warmup audio failed to auto-play:', e)); 
 
@@ -674,9 +674,9 @@
             carousel.classList.add('hidden');
             warmupSound.pause(); 
 
-            flySound.loop = true;
-            flySound.currentTime = 0;
-            flySound.play().catch(err => console.log('Flying audio failed to start loop:', err));
+            gameMusic.loop = true; // BGM is set to loop
+            gameMusic.currentTime = 0;
+            gameMusic.play().catch(err => console.log('Flying audio failed to start loop:', err));
         }
 
 
@@ -1125,16 +1125,15 @@
             // If game is running, jump
             birdVelocity = dynamicJumpForce;
 
-            // Play sound for jump
-            flySound.currentTime = 0;
-            flySound.play().catch(err => console.log('Jump audio failed:', err));
+            // Removed the code that rewound and played the background music (gameMusic) on every jump.
+            // This ensures the music plays constantly without interruption.
         }
         
         function handleGameOver() {
             if (gameOver) return; 
             gameOver = true;
             
-            flySound.pause();
+            gameMusic.pause(); // Stop background music
             
             hitSound.currentTime = 0;
             hitSound.play().catch(e => console.log('Game Over audio failed:', e));
@@ -1150,7 +1149,7 @@
             if (gameOver) return; 
             gameOver = true;
 
-            flySound.pause();
+            gameMusic.pause(); // Stop background music
             
             winSound.currentTime = 0;
             winSound.play().catch(e => console.log('Win audio failed:', e));
@@ -1227,3 +1226,4 @@
     </script>
 </body>
 </html>
+
